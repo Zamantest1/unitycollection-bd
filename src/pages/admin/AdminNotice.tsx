@@ -81,32 +81,33 @@ const AdminNotice = () => {
 
   return (
     <AdminLayout title="Notice Bar">
-      <div className="max-w-xl">
+      <div className="w-full max-w-xl mx-auto px-2 sm:px-0">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-gold" />
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gold" />
               Scrolling Notice Bar
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label>Notice Text</Label>
+                <Label className="text-sm sm:text-base">Notice Text</Label>
                 <Input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="🎉 Free delivery inside Dhaka! | 🛒 Shop now for Eid collection!"
+                  placeholder="🎉 Free delivery inside Dhaka!"
+                  className="text-sm sm:text-base"
                 />
-                <p className="text-xs text-muted">
+                <p className="text-xs text-muted-foreground">
                   This text will scroll across the top of your store. Use emojis for visual appeal!
                 </p>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gold-soft/30 rounded-lg">
-                <div>
-                  <Label className="text-base font-medium">Show Notice Bar</Label>
-                  <p className="text-sm text-muted">Toggle visibility on the storefront</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gold-soft/30 rounded-lg">
+                <div className="flex-1">
+                  <Label className="text-sm sm:text-base font-medium">Show Notice Bar</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Toggle visibility on the storefront</p>
                 </div>
                 <Switch
                   checked={isActive}
@@ -117,11 +118,11 @@ const AdminNotice = () => {
               {/* Preview */}
               {text && (
                 <div className="space-y-2">
-                  <Label>Preview</Label>
+                  <Label className="text-sm sm:text-base">Preview</Label>
                   <div className="bg-gold text-gold-foreground py-2 rounded-md overflow-hidden">
                     <div className="animate-marquee whitespace-nowrap">
-                      <span className="mx-8 text-sm font-medium">{text}</span>
-                      <span className="mx-8 text-sm font-medium">{text}</span>
+                      <span className="mx-4 sm:mx-8 text-xs sm:text-sm font-medium">{text}</span>
+                      <span className="mx-4 sm:mx-8 text-xs sm:text-sm font-medium">{text}</span>
                     </div>
                   </div>
                 </div>
@@ -129,7 +130,7 @@ const AdminNotice = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-primary text-primary-foreground hover:bg-gold hover:text-gold-foreground"
+                className="w-full bg-primary text-primary-foreground hover:bg-gold hover:text-gold-foreground text-sm sm:text-base py-2 sm:py-2.5"
                 disabled={saveMutation.isPending}
               >
                 {saveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
