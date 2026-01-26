@@ -25,13 +25,21 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-secondary shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
+          {/* Logo & Brand Name */}
+          <Link to="/" className="flex items-center gap-3">
             <img 
               src={LOGO_URL} 
               alt="Unity Collection" 
               className="h-10 md:h-14 w-auto"
             />
+            <div className="flex flex-col">
+              <span className="font-heading text-lg md:text-xl font-semibold text-primary-foreground leading-tight">
+                Unity Collection
+              </span>
+              <span className="hidden sm:block text-[10px] md:text-xs text-gold tracking-wide">
+                Premium Panjabi & Fashion
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
