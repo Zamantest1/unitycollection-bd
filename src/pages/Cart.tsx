@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,8 @@ import {
   Check,
   X,
   Users,
+  CreditCard,
+  PartyPopper,
 } from "lucide-react";
 
 const orderSchema = z.object({
@@ -35,6 +37,17 @@ const orderSchema = z.object({
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
+
+interface Member {
+  id: string;
+  member_code: string;
+  name: string;
+  phone: string;
+  address: string | null;
+  discount_value: number;
+  discount_type: string;
+  total_purchases: number;
+}
 
 const WHATSAPP_NUMBER = "8801880545357";
 
@@ -49,6 +62,10 @@ const Cart = () => {
     discount: number;
   } | null>(null);
   const [validatedReferral, setValidatedReferral] = useState<string | null>(null);
+  const [detectedMember, setDetectedMember] = useState<Member | null>(null);
+  const [memberDiscount, setMemberDiscount] = useState(0);
+  const [showMembershipCongrats, setShowMembershipCongrats] = useState(false);
+  const [newMemberCode, setNewMemberCode] = useState<string | null>(null);
 
   const {
     register,
@@ -62,10 +79,73 @@ const Cart = () => {
     },
   });
 
+  const phoneValue = watch("phone");
   const deliveryArea = watch("deliveryArea");
   const deliveryCharge = deliveryArea === "dhaka" ? 60 : 120;
-  const discount = appliedCoupon?.discount || 0;
-  const total = subtotal + deliveryCharge - discount;
+  const couponDiscount = appliedCoupon?.discount || 0;
+  const totalDiscount = couponDiscount + memberDiscount;
+  const total = subtotal + deliveryCharge - totalDiscount;
+
+  // Fetch membership threshold settings
+  const { data: settings } = useQuery({
+    queryKey: ["membership-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("*");
+      
+      if (error) throw error;
+      
+      const settingsMap: Record<string, any> = {};
+      data?.forEach((s: { key: string; value: any }) => {
+        settingsMap[s.key] = s.value;
+      });
+      return settingsMap;
+    },
+  });
+
+  // Auto-detect member by phone
+  useEffect(() => {
+    const detectMember = async () => {
+      if (!phoneValue || phoneValue.length < 11) {
+        setDetectedMember(null);
+        setMemberDiscount(0);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .eq("phone", phoneValue)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!error && data) {
+        setDetectedMember(data as Member);
+        // Calculate member discount
+        let discount = 0;
+        if (data.discount_type === "percentage") {
+          discount = Math.round((subtotal * data.discount_value) / 100);
+        } else {
+          discount = data.discount_value;
+        }
+        setMemberDiscount(discount);
+        
+        if (!appliedCoupon) {
+          toast({
+            title: `Welcome back, ${data.name}!`,
+            description: `Member discount of ${data.discount_type === "percentage" ? `${data.discount_value}%` : `৳${data.discount_value}`} applied`,
+          });
+        }
+      } else {
+        setDetectedMember(null);
+        setMemberDiscount(0);
+      }
+    };
+
+    const timeout = setTimeout(detectMember, 500);
+    return () => clearTimeout(timeout);
+  }, [phoneValue, subtotal, toast, appliedCoupon]);
 
   // Validate coupon
   const validateCoupon = useMutation({
@@ -162,9 +242,10 @@ const Cart = () => {
           quantity: item.quantity,
         })),
         subtotal,
-        discount_amount: discount,
+        discount_amount: totalDiscount,
         coupon_code: appliedCoupon?.code || null,
         referral_code: validatedReferral || null,
+        member_id: detectedMember?.id || null,
         total,
       };
 
@@ -192,7 +273,7 @@ const Cart = () => {
           `🛒 *Products:*\n${itemsList}\n\n` +
           `💰 *Subtotal:* ৳${subtotal}\n` +
           `🚚 *Delivery:* ৳${deliveryCharge}\n` +
-          (discount > 0 ? `🎟️ *Discount:* -৳${discount}\n` : "") +
+          (totalDiscount > 0 ? `🎟️ *Discount:* -৳${totalDiscount}\n` : "") +
           (validatedReferral ? `👥 *Referral:* ${validatedReferral}\n` : "") +
           `✅ *Total:* ৳${total}`
       );
@@ -347,6 +428,23 @@ const Cart = () => {
                   {errors.phone && (
                     <p className="text-sm text-destructive">{errors.phone.message}</p>
                   )}
+                  {/* Member Detection */}
+                  {detectedMember && (
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-md border border-primary/20">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Welcome back, {detectedMember.name}!
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Member {detectedMember.member_code} • {detectedMember.discount_type === "percentage" 
+                            ? `${detectedMember.discount_value}%` 
+                            : `৳${detectedMember.discount_value}`} discount applied
+                        </p>
+                      </div>
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Address */}
@@ -470,10 +568,10 @@ const Cart = () => {
                     <span>Delivery</span>
                     <span>৳{deliveryCharge}</span>
                   </div>
-                  {discount > 0 && (
+                  {totalDiscount > 0 && (
                     <div className="flex justify-between text-sm text-primary">
                       <span>Discount</span>
-                      <span>-৳{discount}</span>
+                      <span>-৳{totalDiscount}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-lg border-t border-border pt-2">

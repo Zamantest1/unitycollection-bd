@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Check } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Product {
   id: string;
@@ -10,6 +15,7 @@ interface Product {
   image_urls: string[];
   categories?: { name: string } | null;
   stock_quantity?: number;
+  sizes?: string[] | null;
 }
 
 interface ProductCardProps {
@@ -17,6 +23,10 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCart();
+  const { toast } = useToast();
+  const [isAdded, setIsAdded] = useState(false);
+
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
@@ -27,6 +37,33 @@ export function ProductCard({ product }: ProductCardProps) {
   const stockQuantity = product.stock_quantity ?? 0;
   const isOutOfStock = stockQuantity === 0;
   const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
+  const defaultSize = product.sizes?.[0] || "";
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isOutOfStock) return;
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: displayPrice || product.price,
+      originalPrice: product.price,
+      size: defaultSize,
+      imageUrl,
+      quantity: 1,
+      stockQuantity,
+    });
+
+    setIsAdded(true);
+    toast({
+      title: "Added to cart!",
+      description: `${product.name}${defaultSize ? ` (${defaultSize})` : ""} has been added`,
+    });
+
+    setTimeout(() => setIsAdded(false), 1500);
+  };
 
   return (
     <motion.div
@@ -65,6 +102,31 @@ export function ProductCard({ product }: ProductCardProps) {
               </Badge>
             )}
           </div>
+
+          {/* Quick Add Button */}
+          {!isOutOfStock && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute bottom-2 right-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <Button
+                size="icon"
+                onClick={handleQuickAdd}
+                className={`h-9 w-9 rounded-full shadow-md transition-all ${
+                  isAdded 
+                    ? "bg-green-500 hover:bg-green-600" 
+                    : "bg-gold hover:bg-gold/90"
+                } text-white`}
+              >
+                {isAdded ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
+              </Button>
+            </motion.div>
+          )}
         </div>
 
         {/* Content */}
