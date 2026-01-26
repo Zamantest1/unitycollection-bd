@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { OrderForm } from "@/components/product/OrderForm";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -239,7 +241,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Order Form */}
+              {/* Add to Cart / Order Section */}
               {isOutOfStock ? (
                 <div className="border-t border-border pt-6">
                   <Button disabled className="w-full" size="lg">
@@ -250,15 +252,45 @@ const ProductDetail = () => {
                   </p>
                 </div>
               ) : (
-                <OrderForm
-                  product={{
-                    id: product.id,
-                    name: product.name,
-                    price: displayPrice!,
-                    size: selectedSize || undefined,
-                    stockQuantity,
-                  }}
-                />
+                <div className="space-y-4">
+                  {/* Quick Add to Cart */}
+                  <AddToCartButton
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      price: displayPrice!,
+                      originalPrice: product.price,
+                      imageUrl: images[0],
+                      stockQuantity,
+                    }}
+                    selectedSize={selectedSize || undefined}
+                    requiresSize={sizes.length > 0}
+                    className="w-full"
+                    size="lg"
+                  />
+
+                  {/* Or Order Directly via WhatsApp */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or order directly
+                      </span>
+                    </div>
+                  </div>
+
+                  <OrderForm
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      price: displayPrice!,
+                      size: selectedSize || undefined,
+                      stockQuantity,
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
