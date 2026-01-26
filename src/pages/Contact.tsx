@@ -1,9 +1,9 @@
 import { Layout } from "@/components/layout/Layout";
-import { Phone, Mail, MapPin, MessageCircle, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, MessageCircle, Clock, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Contact = () => {
-  const whatsappLink = "https://wa.me/8801XXXXXXXXX";
+  const whatsappLink = "https://wa.me/8801880545357";
 
   return (
     <Layout>
@@ -42,7 +42,7 @@ const Contact = () => {
             </div>
 
             {/* Contact Info Cards */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
               <div className="bg-card rounded-lg p-6 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-gold-soft flex items-center justify-center flex-shrink-0">
@@ -50,7 +50,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Phone</h3>
-                    <p className="text-muted">+880 1XXX-XXXXXX</p>
+                    <a href="tel:+8801880545357" className="text-muted hover:text-gold transition-colors">
+                      +880 1880-545357
+                    </a>
                   </div>
                 </div>
               </div>
@@ -62,7 +64,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Email</h3>
-                    <p className="text-muted">info@unitycollection.com</p>
+                    <a href="mailto:unitycollectionbd@gmail.com" className="text-muted hover:text-gold transition-colors">
+                      unitycollectionbd@gmail.com
+                    </a>
                   </div>
                 </div>
               </div>
@@ -74,7 +78,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Location</h3>
-                    <p className="text-muted">Dhaka, Bangladesh</p>
+                    <p className="text-muted">Rajshahi, Bangladesh</p>
                   </div>
                 </div>
               </div>
@@ -91,6 +95,44 @@ const Contact = () => {
                 </div>
               </div>
             </div>
+
+            {/* Social Links */}
+            <div className="bg-card rounded-lg p-6 shadow-sm text-center">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-4">Follow Us</h3>
+              <div className="flex justify-center gap-4">
+                <a 
+                  href="https://www.facebook.com/UnityCollectionBd" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-6 w-6 text-primary-foreground" />
+                </a>
+              </div>
+            </div>
+
+            {/* Owner Info */}
+            <div className="mt-8 text-center text-sm text-muted">
+              <p>Owner: <span className="text-foreground">Ibn E Habib</span></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Website Credit */}
+        <div className="bg-secondary py-4">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-sm text-primary-foreground/70">
+              Website designed by{" "}
+              <a 
+                href="https://shomikujzaman.vercel.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gold hover:underline"
+              >
+                Shomik Ujzaman
+              </a>
+            </p>
           </div>
         </div>
       </div>
