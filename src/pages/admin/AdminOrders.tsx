@@ -6,19 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Trash2, RotateCcw, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const statusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"];
+const statusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
 
 const AdminOrders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [referralFilter, setReferralFilter] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [deleteOrder, setDeleteOrder] = useState<any>(null);
+  const [returnOrder, setReturnOrder] = useState<any>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
@@ -40,7 +44,40 @@ const AdminOrders = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({ title: "Order status updated!" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Order deleted! Stock has been restored." });
+      setDeleteOrder(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const returnOrderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({ status: "returned" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Order marked as returned! Stock has been restored." });
+      setReturnOrder(null);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -54,8 +91,9 @@ const AdminOrders = () => {
       order.phone.includes(searchQuery);
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesReferral = !referralFilter || order.referral_code?.toLowerCase().includes(referralFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesReferral;
   });
 
   const getStatusColor = (status: string) => {
@@ -65,6 +103,7 @@ const AdminOrders = () => {
       case "shipped": return "bg-purple-100 text-purple-800";
       case "delivered": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
+      case "returned": return "bg-orange-100 text-orange-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -85,7 +124,7 @@ const AdminOrders = () => {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by Order ID, name, or phone..."
             value={searchQuery}
@@ -93,6 +132,12 @@ const AdminOrders = () => {
             className="pl-10"
           />
         </div>
+        <Input
+          placeholder="Filter by referral code..."
+          value={referralFilter}
+          onChange={(e) => setReferralFilter(e.target.value)}
+          className="w-full md:w-48"
+        />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full md:w-48">
             <SelectValue placeholder="Filter by status" />
@@ -121,25 +166,30 @@ const AdminOrders = () => {
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-bold text-foreground">{order.order_id}</h3>
                       <Badge className={getStatusColor(order.status)}>
                         {order.status}
                       </Badge>
+                      {order.referral_code && (
+                        <Badge variant="outline" className="text-xs">
+                          Ref: {order.referral_code}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-foreground">{order.customer_name}</p>
-                    <p className="text-sm text-muted">{order.phone}</p>
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-sm text-muted-foreground">{order.phone}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
                       {new Date(order.created_at).toLocaleString()}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-gold font-bold text-lg">৳{order.total}</p>
                     {order.discount_amount > 0 && (
-                      <p className="text-xs text-muted">Discount: ৳{order.discount_amount}</p>
+                      <p className="text-xs text-muted-foreground">Discount: ৳{order.discount_amount}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Select
                       value={order.status}
                       onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status })}
@@ -158,6 +208,14 @@ const AdminOrders = () => {
                     <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {order.status !== "returned" && order.status !== "cancelled" && (
+                      <Button size="sm" variant="outline" onClick={() => setReturnOrder(order)}>
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteOrder(order)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -165,7 +223,7 @@ const AdminOrders = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-muted">
+        <div className="text-center py-12 text-muted-foreground">
           <p>No orders found</p>
         </div>
       )}
@@ -180,27 +238,33 @@ const AdminOrders = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted">Customer</p>
+                  <p className="text-muted-foreground">Customer</p>
                   <p className="font-medium">{selectedOrder.customer_name}</p>
                 </div>
                 <div>
-                  <p className="text-muted">Phone</p>
+                  <p className="text-muted-foreground">Phone</p>
                   <p className="font-medium">{selectedOrder.phone}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-muted">Address</p>
+                  <p className="text-muted-foreground">Address</p>
                   <p className="font-medium">{selectedOrder.address}</p>
                 </div>
                 <div>
-                  <p className="text-muted">Delivery Area</p>
+                  <p className="text-muted-foreground">Delivery Area</p>
                   <p className="font-medium capitalize">{selectedOrder.delivery_area}</p>
                 </div>
                 <div>
-                  <p className="text-muted">Status</p>
+                  <p className="text-muted-foreground">Status</p>
                   <Badge className={getStatusColor(selectedOrder.status)}>
                     {selectedOrder.status}
                   </Badge>
                 </div>
+                {selectedOrder.referral_code && (
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground">Referral Code</p>
+                    <p className="font-medium">{selectedOrder.referral_code}</p>
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border pt-4">
@@ -210,6 +274,7 @@ const AdminOrders = () => {
                     <span>
                       {item.name}
                       {item.size && ` (${item.size})`}
+                      {item.quantity && item.quantity > 1 && ` × ${item.quantity}`}
                     </span>
                     <span className="text-gold">৳{item.price}</span>
                   </div>
@@ -233,13 +298,58 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 Ordered: {new Date(selectedOrder.created_at).toLocaleString()}
               </p>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOrder} onOpenChange={(open) => !open && setDeleteOrder(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order {deleteOrder?.order_id}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this order and restore the stock for all items in the order. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteOrder && deleteOrderMutation.mutate(deleteOrder.id)}
+              disabled={deleteOrderMutation.isPending}
+            >
+              {deleteOrderMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Return Confirmation Dialog */}
+      <AlertDialog open={!!returnOrder} onOpenChange={(open) => !open && setReturnOrder(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark Order {returnOrder?.order_id} as Returned?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the order as returned and restore the stock for all items. The order will remain in records for tracking purposes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => returnOrder && returnOrderMutation.mutate(returnOrder.id)}
+              disabled={returnOrderMutation.isPending}
+            >
+              {returnOrderMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Mark as Returned
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
