@@ -3,7 +3,10 @@ import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // NOTE: Browsers send a preflight including Supabase's extra headers (e.g. x-supabase-client-platform).
+  // If we don't allow them, the browser blocks the request and the client sees "Failed to fetch".
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface OrderItem {
@@ -21,7 +24,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { orderId } = await req.json();
+
+    console.log("generate-receipt: request", { orderId });
 
     if (!orderId) {
       return new Response(
@@ -51,9 +63,13 @@ Deno.serve(async (req) => {
     }
 
     // Parse items
-    const items: OrderItem[] = typeof order.items === "string" 
-      ? JSON.parse(order.items) 
-      : order.items;
+    let items: OrderItem[] = [];
+    try {
+      items = (typeof order.items === "string" ? JSON.parse(order.items) : order.items) as OrderItem[];
+    } catch (e) {
+      console.error("Items parse error:", e);
+      items = [];
+    }
 
     // Create PDF
     const pdfDoc = await PDFDocument.create();

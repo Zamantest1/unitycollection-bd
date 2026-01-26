@@ -12,7 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Trash2, RotateCcw, Loader2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const statusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
+// NOTE:
+// - We allow filtering by "returned" so admins can find returned orders.
+// - We DO NOT allow setting "returned" via the generic status dropdown; use the dedicated Return button instead.
+const filterStatusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
+const updateStatusOptions = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 const AdminOrders = () => {
   const { toast } = useToast();
@@ -180,7 +184,7 @@ const AdminOrders = () => {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            {statusOptions.map((status) => (
+            {filterStatusOptions.map((status) => (
               <SelectItem key={status} value={status}>
                 {status === "all" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
               </SelectItem>
@@ -235,7 +239,7 @@ const AdminOrders = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {statusOptions.filter((s) => s !== "all").map((status) => (
+                        {updateStatusOptions.map((status) => (
                           <SelectItem key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </SelectItem>
