@@ -95,14 +95,14 @@ export function HeroBanner() {
             }`} />
           </div>
           
-          <div className="relative h-full container mx-auto px-4 flex items-center">
-            <div className="max-w-xl">
+          <div className="relative h-full container mx-auto px-12 md:px-4 flex items-center justify-center md:justify-start">
+            <div className="max-w-xl text-center md:text-left">
               {currentBanner.title && (
                 <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-4"
+                  className="font-display text-2xl sm:text-3xl md:text-5xl font-bold text-primary-foreground mb-3 md:mb-4 leading-tight"
                 >
                   {currentBanner.title}
                 </motion.h1>
@@ -112,7 +112,7 @@ export function HeroBanner() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-lg md:text-xl text-primary-foreground/90 mb-6"
+                  className="text-sm sm:text-base md:text-xl text-primary-foreground/90 mb-4 md:mb-6 px-4 md:px-0"
                 >
                   {currentBanner.subtitle}
                 </motion.p>
@@ -122,6 +122,7 @@ export function HeroBanner() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
+                  className="flex justify-center md:justify-start"
                 >
                   <Link to={currentBanner.link}>
                     <Button size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90">
