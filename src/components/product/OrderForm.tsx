@@ -151,7 +151,7 @@ export function OrderForm({ product }: OrderFormProps) {
         `👤 *Name:* ${order.customer_name}\n` +
         `📞 *Phone:* ${order.phone}\n` +
         `📍 *Address:* ${order.address}\n` +
-        `🚚 *Delivery:* ${order.delivery_area === "dhaka" ? "Inside Dhaka" : "Outside Dhaka"}\n\n` +
+        `🚚 *Delivery:* ${order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
         `🛒 *Product:*\n` +
         `• ${product.name}${product.size ? ` (Size: ${product.size})` : ""} - ৳${product.price}\n\n` +
         `💰 *Subtotal:* ৳${subtotal}\n` +
@@ -249,13 +249,13 @@ export function OrderForm({ product }: OrderFormProps) {
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="dhaka" id="dhaka" />
             <Label htmlFor="dhaka" className="font-normal cursor-pointer">
-              Inside Dhaka (৳60)
+              Inside Rajshahi (৳60)
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="outside" id="outside" />
             <Label htmlFor="outside" className="font-normal cursor-pointer">
-              Outside Dhaka (৳120)
+              Outside Rajshahi (৳120)
             </Label>
           </div>
         </RadioGroup>

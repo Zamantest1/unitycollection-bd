@@ -4,7 +4,7 @@ const features = [
   {
     icon: Truck,
     title: "Fast Delivery",
-    description: "Dhaka: 1-2 days",
+    description: "Rajshahi: 1-2 days",
   },
   {
     icon: Shield,
