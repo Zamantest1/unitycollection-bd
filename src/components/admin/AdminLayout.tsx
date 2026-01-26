@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { InstallPrompt } from "./InstallPrompt";
 
 const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
@@ -135,6 +136,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
           {/* Bottom Actions */}
           <div className="p-4 border-t border-sidebar-border space-y-2">
+            <InstallPrompt />
             <Link to="/" className="block">
               <Button variant="ghost" className="w-full justify-start text-sidebar-foreground hover:text-gold">
                 <ChevronLeft className="h-4 w-4 mr-2" />
