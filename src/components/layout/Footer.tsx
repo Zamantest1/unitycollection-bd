@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, Facebook } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Instagram } from "lucide-react";
 
 const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
@@ -90,6 +90,15 @@ export function Footer() {
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://www.instagram.com/unitycollectionbd" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
               </a>
             </div>
           </div>
