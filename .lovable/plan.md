@@ -1,158 +1,127 @@
 
 
-# Unity Collection - Complete E-commerce System
+# Implementation Plan: Homepage Banner Slideshow & Updates
 
-## Brand Identity & Design System
-
-### Color Palette
-- **Primary Dark Green** `#0F4D45` - Headers, buttons, highlights
-- **Secondary Deep Green** `#0B3A34` - Navbar, footer, admin sidebar
-- **Gold Accent** `#C9A24D` - Price highlights, offers, icons, badges
-- **Soft Gold** `#E8D9A8` - Subtle backgrounds, dividers, cards
-- **Off-White Background** `#F8F6F2` - Main page backgrounds
-- **Text Dark** `#1E1E1E` - Body text
-- **Muted Gray** `#6B7280` - Secondary text, labels
-
-### Typography
-- **Playfair Display** - Product titles, section headings, hero text
-- **Inter** - Descriptions, buttons, forms, admin UI
-
-### Design Principles
-- Premium Bangladeshi traditional aesthetic
-- Mobile-first, compact layouts
-- Gold as accent only, green as dominant brand signal
-- Smooth, subtle transitions (no flashy animations)
+## Overview
+This plan covers three main tasks:
+1. Enhanced homepage banner with image slideshow and customizable overlays
+2. Update delivery text from "Dhaka" to "Rajshahi"
+3. Create admin user account
 
 ---
 
-## Customer Storefront
+## Task 1: Homepage Banner Slideshow with Overlay Options
 
-### Homepage
-- **Header** - Logo, navigation, mobile menu
-- **Scrolling Notice Bar** - Marquee announcements (admin toggleable)
-- **Hero Banner Slider** - Rotating banners with elegant text overlays
-- **Featured Products** - Premium product showcase grid
-- **Category Quick Links** - Visual category cards with gold accents
-- **Why Choose Us** - Compact trust badges (minimal height)
-- **Footer** - Logo, contact info, social links in deep green
+### Database Changes
+Add a new column to the `banners` table to support overlay selection:
 
-### Shop Page
-- **Product Grid** - Responsive cards with Playfair titles, gold price highlights
-- **Category Filter** - Collapsible on mobile, auto-closes after selection
-- **Search Bar** - Real-time product filtering
-- **Discount Badges** - Gold accent badges for sale items
+```text
++------------------+
+|     banners      |
++------------------+
+| (existing cols)  |
+| + overlay_type   |  <- NEW: 'green' | 'gold' | 'none'
++------------------+
+```
 
-### Product Detail Page
-- **Image Gallery** - Multiple images with elegant navigation
-- **Product Info** - Name in Playfair, description in Inter
-- **Size Selector** - Clean pill-style options
-- **Price Display** - Gold-highlighted with discount strikethrough
-- **Order Form** - Name, phone, address, delivery area
-- **Coupon Input** - Validation with visual feedback
-- **WhatsApp Order Button** - Dark green with gold hover
+**Migration SQL:**
+```sql
+ALTER TABLE banners 
+ADD COLUMN overlay_type text DEFAULT 'green' 
+CHECK (overlay_type IN ('green', 'gold', 'none'));
+```
 
-### Order Flow
-1. Form validation → Order saved to Supabase
-2. Unique Order ID generated (UC-XXXX format)
-3. Status set to "pending"
-4. WhatsApp redirect with complete order details
+### Frontend Changes
 
----
+**1. Update HeroBanner.tsx**
+- Keep current slideshow logic (already working)
+- Add dynamic overlay based on `overlay_type` from database:
+  - `green`: Dark green gradient overlay (current default)
+  - `gold`: Gold/amber gradient overlay
+  - `none`: Subtle dark overlay for text readability
+- Maintain default green background when no banners exist
+- Ensure responsive sizing for mobile and desktop
 
-## Admin Panel
+**2. Update AdminBanners.tsx**
+- Add overlay type selector (dropdown with Green/Gold/None options)
+- Preview of overlay effect when selecting
+- Update form to include overlay_type field
 
-### Authentication
-- **Login Page** (`/admin/login`) - Branded with logo, dark green theme
-- **Protected Routes** - All admin routes require Supabase auth
-- **Logout** - Session clear with redirect
-
-### Dashboard
-- Deep green sidebar with gold active states
-- Quick stats cards (orders, products, revenue)
-- Recent orders overview
-
-### Product Management
-- Add/Edit/Delete products
-- Multi-image Cloudinary upload
-- Category assignment, pricing, discounts
-- Size variants configuration
-- Search and category filter
-
-### Category Management
-- Create, rename, delete categories
-- Optional category images
-- Instant frontend updates
-
-### Banner Management
-- Upload hero banners via Cloudinary
-- Edit title/subtitle text
-- Enable/disable toggles
-- Drag-to-reorder sequence
-
-### Notice Bar Settings
-- Edit scrolling text content
-- Toggle visibility on/off
-
-### Coupon System
-- Create codes with fixed/percentage discounts
-- Set minimum purchase, expiry dates
-- Active/inactive toggle
-- Usage tracking
-
-### Order Management
-- Full order list with search
-- Filter by status (pending, confirmed, shipped, delivered, cancelled)
-- Order detail view with breakdown
-- Status update actions
+### Visual Design
+```text
++------------------------------------------+
+|  Homepage Banner with Slideshow          |
++------------------------------------------+
+|                                          |
+|  [Background Image - Auto-slides]        |
+|  +------------------------------------+  |
+|  |  Overlay Layer (Green/Gold/None)  |  |
+|  |  +------------------------------+ |  |
+|  |  |  Title Text                  | |  |
+|  |  |  Subtitle                    | |  |
+|  |  |  [Shop Now Button]           | |  |
+|  |  +------------------------------+ |  |
+|  +------------------------------------+  |
+|                                          |
+|  [Dots Navigation]  [< >] Arrows         |
++------------------------------------------+
+```
 
 ---
 
-## Database Structure (Supabase)
+## Task 2: Location Updates (Dhaka → Rajshahi)
 
-### Tables
-- **categories** - id, name, image_url, created_at
-- **products** - id, name, description, price, discount_price, category_id, sizes[], image_urls[], is_featured, created_at
-- **banners** - id, image_url, title, subtitle, link, is_active, display_order
-- **notice_settings** - id, text, is_active
-- **coupons** - id, code, discount_type, discount_value, min_purchase, expiry_date, is_active, usage_count
-- **orders** - id, order_id, customer_name, phone, address, delivery_area, items[], subtotal, discount_amount, coupon_code, total, status, created_at
+### Files to Update
 
-### Row Level Security
-- Public: Read products, categories, banners, active notices
-- Public: Insert orders, validate coupons
-- Admin only: All write operations, read orders
+| File | Change |
+|------|--------|
+| `src/components/home/WhyChooseUs.tsx` | "Dhaka: 1-2 days" → "Rajshahi: 1-2 days" |
+| `src/components/product/OrderForm.tsx` | "Inside Dhaka" → "Inside Rajshahi", "Outside Dhaka" → "Outside Rajshahi" |
+| `index.html` | Meta description: "Free delivery in Dhaka" → "Free delivery in Rajshahi" |
 
 ---
 
-## Technical Implementation
+## Task 3: Admin User Setup
 
-### Image Handling (Cloudinary)
-- Upload with automatic compression
-- Responsive image transformations
-- URL-only storage in database
-- Cleanup on product deletion
+### Process
+1. Create user in Supabase Auth with:
+   - Email: `unitycollectionbd@gmail.com`
+   - Password: `unitycollectionbd2024`
 
-### WhatsApp Integration
-- Environment variable for number
-- Pre-formatted order message with:
-  - Order ID, customer details
-  - Product list with sizes and prices
-  - Discount breakdown, total
-  - Product links
+2. Add admin role to `user_roles` table:
+   - Link user_id to the new user
+   - Set role = 'admin'
 
-### Mobile Optimization
-- Products visible immediately on shop page
-- Collapsed category filter by default
-- Touch-optimized buttons and forms
-- Fast-loading optimized images
+### Note
+This requires using Supabase Admin API to create the user, then inserting the role record. The user will be able to log in at `/admin/login` after setup.
 
 ---
 
-## Setup After Implementation
+## Technical Summary
 
-1. **Enable Supabase** - Connect database backend
-2. **Add Secrets** - Cloudinary keys, WhatsApp number
-3. **Create Admin User** - Via Supabase Auth dashboard
-4. **Run Migrations** - Create all database tables
-5. **Upload Initial Content** - Logo, banners, products
+### Database Migration
+```sql
+-- Add overlay_type to banners
+ALTER TABLE banners 
+ADD COLUMN overlay_type text DEFAULT 'green' 
+CHECK (overlay_type IN ('green', 'gold', 'none'));
+```
+
+### Files to Modify
+1. `src/components/home/HeroBanner.tsx` - Add overlay type rendering
+2. `src/pages/admin/AdminBanners.tsx` - Add overlay selector
+3. `src/components/home/WhyChooseUs.tsx` - Update delivery text
+4. `src/components/product/OrderForm.tsx` - Update delivery area labels
+5. `index.html` - Update meta description
+
+### Admin User Creation
+- Will use Supabase to create auth user and assign admin role
+
+---
+
+## Expected Result
+- Homepage shows image slideshow (if banners exist) with selectable green/gold/no overlay
+- Falls back to green background when no banners configured
+- All "Dhaka" references changed to "Rajshahi"
+- Admin can log in with `unitycollectionbd@gmail.com` / `unitycollectionbd2024`
 
