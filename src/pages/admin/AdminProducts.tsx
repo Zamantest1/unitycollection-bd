@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 
 interface ProductForm {
   name: string;
@@ -21,7 +22,7 @@ interface ProductForm {
   discount_price: string;
   category_id: string;
   sizes: string;
-  image_urls: string;
+  image_urls: string[];
   is_featured: boolean;
   is_active: boolean;
 }
@@ -33,7 +34,7 @@ const defaultForm: ProductForm = {
   discount_price: "",
   category_id: "",
   sizes: "",
-  image_urls: "",
+  image_urls: [],
   is_featured: false,
   is_active: true,
 };
@@ -81,7 +82,7 @@ const AdminProducts = () => {
         discount_price: data.discount_price ? parseFloat(data.discount_price) : null,
         category_id: data.category_id || null,
         sizes: data.sizes ? data.sizes.split(",").map((s) => s.trim()) : [],
-        image_urls: data.image_urls ? data.image_urls.split("\n").map((s) => s.trim()).filter(Boolean) : [],
+        image_urls: data.image_urls,
         is_featured: data.is_featured,
         is_active: data.is_active,
       };
@@ -137,7 +138,7 @@ const AdminProducts = () => {
       discount_price: product.discount_price?.toString() || "",
       category_id: product.category_id || "",
       sizes: product.sizes?.join(", ") || "",
-      image_urls: product.image_urls?.join("\n") || "",
+      image_urls: product.image_urls || [],
       is_featured: product.is_featured,
       is_active: product.is_active,
     });
@@ -249,12 +250,12 @@ const AdminProducts = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Image URLs (one per line)</Label>
-                <Textarea
+                <Label>Product Images</Label>
+                <MultiImageUpload
                   value={form.image_urls}
-                  onChange={(e) => setForm({ ...form, image_urls: e.target.value })}
-                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                  rows={3}
+                  onChange={(urls) => setForm({ ...form, image_urls: urls })}
+                  folder="unity-collection/products"
+                  maxImages={10}
                 />
               </div>
 

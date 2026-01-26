@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 const AdminBanners = () => {
   const { toast } = useToast();
@@ -100,7 +101,7 @@ const AdminBanners = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.image_url.trim()) {
-      toast({ title: "Please enter an image URL", variant: "destructive" });
+      toast({ title: "Please upload a banner image", variant: "destructive" });
       return;
     }
     saveMutation.mutate();
@@ -116,17 +117,18 @@ const AdminBanners = () => {
               Add Banner
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>{editingId ? "Edit Banner" : "Add Banner"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Image URL *</Label>
-                <Input
+                <Label>Banner Image *</Label>
+                <ImageUpload
                   value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="https://example.com/banner.jpg"
+                  onChange={(url) => setForm({ ...form, image_url: url })}
+                  folder="unity-collection/banners"
+                  placeholder="Upload banner image"
                 />
               </div>
               <div className="space-y-2">

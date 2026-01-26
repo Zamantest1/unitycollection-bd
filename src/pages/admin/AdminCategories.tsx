@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 const AdminCategories = () => {
   const { toast } = useToast();
@@ -117,11 +118,12 @@ const AdminCategories = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Image URL</Label>
-                <Input
+                <Label>Category Image</Label>
+                <ImageUpload
                   value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
+                  onChange={setImageUrl}
+                  folder="unity-collection/categories"
+                  placeholder="Upload category image"
                 />
               </div>
               <div className="flex gap-2 justify-end pt-4">
