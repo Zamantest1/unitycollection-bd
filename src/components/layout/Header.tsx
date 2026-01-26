@@ -32,11 +32,11 @@ export function Header() {
               alt="Unity Collection" 
               className="h-10 md:h-14 w-auto"
             />
-            <div className="flex flex-col">
-              <span className="font-heading text-lg md:text-xl font-semibold text-primary-foreground leading-tight tracking-wide">
+            <div className="flex flex-col md:hidden lg:flex">
+              <span className="font-heading text-lg lg:text-xl font-semibold text-primary-foreground leading-tight tracking-wide">
                 Unity Collection
               </span>
-              <span className="hidden sm:block text-[10px] md:text-xs text-gold/90 tracking-widest uppercase">
+              <span className="hidden sm:block lg:block text-[10px] lg:text-xs text-gold/90 tracking-widest uppercase">
                 Premium Panjabi
               </span>
             </div>
