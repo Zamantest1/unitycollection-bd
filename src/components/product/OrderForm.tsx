@@ -50,6 +50,7 @@ export function OrderForm({ product }: OrderFormProps) {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
@@ -183,14 +184,12 @@ export function OrderForm({ product }: OrderFormProps) {
         total: total,
       };
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert(orderData)
-        .select()
-        .single();
-
+      // NOTE: Customers (anon users) are not allowed to SELECT from `orders` (PII),
+      // so we must avoid `.select()` here. Otherwise PostgREST rejects returning rows.
+      const { error } = await supabase.from("orders").insert(orderData);
       if (error) throw error;
-      return order;
+
+      return orderData;
     },
     onSuccess: (order) => {
       // Generate WhatsApp message
@@ -315,7 +314,15 @@ export function OrderForm({ product }: OrderFormProps) {
       {/* Delivery Area */}
       <div className="space-y-3">
         <Label>Delivery Area *</Label>
-        <RadioGroup defaultValue="dhaka" {...register("deliveryArea")}>
+        <RadioGroup
+          value={deliveryArea}
+          onValueChange={(value) =>
+            setValue("deliveryArea", value as OrderFormData["deliveryArea"], {
+              shouldValidate: true,
+              shouldDirty: true,
+            })
+          }
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="dhaka" id="dhaka" />
             <Label htmlFor="dhaka" className="font-normal cursor-pointer">

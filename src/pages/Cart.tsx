@@ -72,6 +72,7 @@ const Cart = () => {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
@@ -249,14 +250,13 @@ const Cart = () => {
         total,
       };
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert(orderData)
-        .select()
-        .single();
-
+      // NOTE: Customers (anon users) are not allowed to SELECT from `orders` (PII),
+      // so we must avoid `.select()` here. Otherwise PostgREST rejects returning rows.
+      const { error } = await supabase.from("orders").insert(orderData);
       if (error) throw error;
-      return order;
+
+      // Return what we already know so the success flow can continue.
+      return orderData;
     },
     onSuccess: async (order) => {
       // Check for auto-membership creation
@@ -522,7 +522,15 @@ const Cart = () => {
                 {/* Delivery Area */}
                 <div className="space-y-2">
                   <Label>Delivery Area *</Label>
-                  <RadioGroup defaultValue="dhaka" {...register("deliveryArea")}>
+                  <RadioGroup
+                    value={deliveryArea}
+                    onValueChange={(value) =>
+                      setValue("deliveryArea", value as OrderFormData["deliveryArea"], {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="dhaka" id="dhaka" />
                       <Label htmlFor="dhaka" className="font-normal cursor-pointer">
