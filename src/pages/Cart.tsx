@@ -313,7 +313,7 @@ const Cart = () => {
       }
 
       const itemsList = items
-        .map((item) => `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - ৳${item.price * item.quantity}`)
+        .map((item) => `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - Tk.${item.price * item.quantity}`)
         .join("\n");
 
       const message = encodeURIComponent(
@@ -324,11 +324,11 @@ const Cart = () => {
           `📍 *Address:* ${order.address}\n` +
           `🚚 *Delivery:* ${order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
           `🛒 *Products:*\n${itemsList}\n\n` +
-          `💰 *Subtotal:* ৳${subtotal}\n` +
-          `🚚 *Delivery:* ৳${deliveryCharge}\n` +
-          (totalDiscount > 0 ? `🎟️ *Discount:* -৳${totalDiscount}\n` : "") +
+          `💰 *Subtotal:* Tk.${subtotal}\n` +
+          `🚚 *Delivery:* Tk.${deliveryCharge}\n` +
+          (totalDiscount > 0 ? `🎟️ *Discount:* -Tk.${totalDiscount}\n` : "") +
           (validatedReferral ? `👥 *Referral:* ${validatedReferral}\n` : "") +
-          `✅ *Total:* ৳${total}`
+          `✅ *Total:* Tk.${total}`
       );
 
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
