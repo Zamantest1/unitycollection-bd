@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { uploadImageToCloudinary } from "@/lib/cloudinaryUpload";
+import { uploadImageToStorage } from "@/lib/imageUpload";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 
 interface ImageUploadProps {
@@ -13,7 +13,7 @@ interface ImageUploadProps {
   placeholder?: string;
 }
 
-export function ImageUpload({ value, onChange, folder = "unity-collection", placeholder = "Upload image" }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, folder = "general", placeholder = "Upload image" }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +49,7 @@ export function ImageUpload({ value, onChange, folder = "unity-collection", plac
         throw new Error("Not authenticated");
       }
 
-      const url = await uploadImageToCloudinary(file, folder);
+      const url = await uploadImageToStorage(file, folder);
       onChange(url);
       toast({ title: "Image uploaded successfully!" });
     } catch (error: any) {
@@ -134,13 +134,13 @@ export function ImageUpload({ value, onChange, folder = "unity-collection", plac
           {isUploading ? (
             <>
               <Loader2 className="h-8 w-8 text-gold animate-spin" />
-              <span className="text-sm text-muted">Uploading...</span>
+              <span className="text-sm text-muted-foreground">Compressing & uploading...</span>
             </>
           ) : (
             <>
-              <ImageIcon className="h-8 w-8 text-muted" />
-              <span className="text-sm text-muted">{placeholder}</span>
-              <span className="text-xs text-muted">Drop image or click to browse</span>
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">{placeholder}</span>
+              <span className="text-xs text-muted-foreground">Drop image or click to browse</span>
             </>
           )}
         </div>

@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { uploadImageToCloudinary } from "@/lib/cloudinaryUpload";
-import { Upload, X, Loader2, ImageIcon, GripVertical } from "lucide-react";
+import { uploadImageToStorage } from "@/lib/imageUpload";
+import { Upload, X, Loader2 } from "lucide-react";
 
 interface MultiImageUploadProps {
   value: string[];
@@ -15,10 +15,11 @@ interface MultiImageUploadProps {
 export function MultiImageUpload({ 
   value = [], 
   onChange, 
-  folder = "unity-collection/products",
+  folder = "products",
   maxImages = 10 
 }: MultiImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -57,6 +58,7 @@ export function MultiImageUpload({
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -65,10 +67,13 @@ export function MultiImageUpload({
       }
 
       const uploadedUrls: string[] = [];
+      const totalFiles = validFiles.length;
 
-      for (const file of validFiles) {
-        const url = await uploadImageToCloudinary(file, folder);
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i];
+        const url = await uploadImageToStorage(file, folder);
         uploadedUrls.push(url);
+        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
       }
 
       onChange([...value, ...uploadedUrls]);
@@ -82,6 +87,7 @@ export function MultiImageUpload({
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -204,12 +210,14 @@ export function MultiImageUpload({
           {isUploading ? (
             <>
               <Loader2 className="h-6 w-6 text-gold animate-spin" />
-              <span className="text-xs text-muted">Uploading...</span>
+              <span className="text-xs text-muted-foreground">
+                Compressing & uploading... {uploadProgress}%
+              </span>
             </>
           ) : (
             <>
-              <Upload className="h-6 w-6 text-muted" />
-              <span className="text-xs text-muted">
+              <Upload className="h-6 w-6 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
                 Drop images or click to upload ({value.length}/{maxImages})
               </span>
             </>
