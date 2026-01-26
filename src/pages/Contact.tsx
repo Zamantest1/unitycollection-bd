@@ -1,12 +1,9 @@
 import { Layout } from "@/components/layout/Layout";
 import { Phone, Mail, MapPin, MessageCircle, Clock, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 const Contact = () => {
   const whatsappLink = "https://wa.me/8801880545357";
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="bg-background min-h-screen">
         {/* Header */}
         <div className="bg-secondary py-8">
@@ -100,13 +97,7 @@ const Contact = () => {
             <div className="bg-card rounded-lg p-6 shadow-sm text-center">
               <h3 className="font-display text-lg font-semibold text-foreground mb-4">Follow Us</h3>
               <div className="flex justify-center gap-4">
-                <a 
-                  href="https://www.facebook.com/UnityCollectionBd" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors"
-                  aria-label="Facebook"
-                >
+                <a href="https://www.facebook.com/UnityCollectionBd" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors" aria-label="Facebook">
                   <Facebook className="h-6 w-6 text-primary-foreground" />
                 </a>
               </div>
@@ -122,22 +113,10 @@ const Contact = () => {
         {/* Website Credit */}
         <div className="bg-secondary py-4">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-sm text-primary-foreground/70">
-              Website designed by{" "}
-              <a 
-                href="https://shomikujzaman.vercel.app/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-gold hover:underline"
-              >
-                Shomik Ujzaman
-              </a>
-            </p>
+            
           </div>
         </div>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default Contact;
