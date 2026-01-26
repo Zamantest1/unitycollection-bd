@@ -1,262 +1,297 @@
 
-# Implementation Plan: Inventory, Stock Management, Referral System, and Image Handling
+
+# Updated Implementation Plan: Complete Feature Set
 
 ## Overview
-This plan covers a comprehensive upgrade to Unity Collection with:
-1. Replace Cloudinary with Supabase Storage for reliable image uploads
-2. Add sample products with real images
-3. Complete inventory and stock management system
-4. Order delete and return handling with automatic stock restoration
-5. Referral system (extension of coupon system)
-6. Category and inventory insights
+This updated plan includes all original features plus your new requirements:
+1. **Sample banners** - Add 3 test banners with images
+2. **Admin navigation reorder** - Dashboard > Products > Orders > Categories > Banners > Coupons > Referrals > Members > Notice Bar
+3. **Membership system** - Auto-granting, detection, and admin management
+4. **PDF receipts** - With "Designed by Shomik" footer and portfolio link
+5. **Quick-add cart button** - On product cards in shop grid (NEW)
+6. **Mini cart dropdown** - Hover preview with quick checkout (NEW)
 
 ---
 
-## Part 1: Replace Cloudinary with Supabase Storage
+## Part 1: Add Sample Banner Images
 
-Since Cloudinary is not working reliably, we'll switch to Supabase Storage which is already integrated.
+Insert 3 sample banners using royalty-free images:
 
-### Database Changes
-Create a storage bucket for product images:
-- Bucket name: `product-images`
-- Public access: Yes (for image URLs)
-- Automatic compression via URL transformations
-
-### Files to Create/Modify
-
-**1. Create new image upload utilities**
-- `src/lib/imageUpload.ts` - New utility for Supabase Storage uploads with compression
-  - Compress images on client-side before upload (using canvas API)
-  - Maximum dimension: 1200px
-  - Quality: 80%
-  - Output format: WebP for better compression
-
-**2. Update upload components**
-- `src/components/admin/ImageUpload.tsx` - Use Supabase Storage instead of Cloudinary
-- `src/components/admin/MultiImageUpload.tsx` - Use Supabase Storage
-
-**3. Delete Cloudinary edge function** (no longer needed)
-- Remove `supabase/functions/cloudinary-upload/`
+| Title | Subtitle | Image | Link |
+|-------|----------|-------|------|
+| Premium Punjabi Collection | Elevate your style with our exclusive designs | Unsplash fashion image | /shop |
+| Eid Special Sale | Up to 30% off on selected items | Unsplash festive image | /shop |
+| New Arrivals | Discover the latest trends in traditional wear | Unsplash clothing image | /shop |
 
 ---
 
-## Part 2: Add Sample Products
+## Part 2: Reorder Admin Navigation
 
-Insert 8 sample products with placeholder images from Unsplash/Pexels (royalty-free):
-
-| Product Name | Category | Price | Stock |
-|-------------|----------|-------|-------|
-| Royal Blue Punjabi | Casual Punjabi | 1,200 | 25 |
-| Elegant Cream Punjabi | Premium Collection | 2,500 | 15 |
-| Festive Red Punjabi | Festive Wear | 1,800 | 20 |
-| Classic White Punjabi | Eid Collection | 1,500 | 30 |
-| Navy Traditional Punjabi | Casual Punjabi | 1,100 | 35 |
-| Golden Embroidered Punjabi | Premium Collection | 3,200 | 10 |
-| Maroon Wedding Punjabi | Festive Wear | 2,800 | 12 |
-| Sky Blue Cotton Punjabi | Casual Punjabi | 950 | 40 |
+**New Order:**
+1. Dashboard
+2. Products
+3. Orders
+4. Categories
+5. Banners
+6. Coupons
+7. Referrals
+8. Members (new)
+9. Notice Bar
 
 ---
 
-## Part 3: Inventory & Stock Management
-
-### Database Schema Changes
-
-**Add columns to `products` table:**
-```text
-+------------------+
-|     products     |
-+------------------+
-| (existing cols)  |
-| + stock_quantity |  <- integer, default 0
-| + sold_count     |  <- integer, default 0
-+------------------+
-```
-
-**Add columns to `orders` table:**
-```text
-+------------------+
-|     orders       |
-+------------------+
-| (existing cols)  |
-| + referral_code  |  <- text, nullable
-+------------------+
-```
-
-### Frontend Changes
-
-**1. Admin Products Page (`AdminProducts.tsx`)**
-- Add stock quantity input field
-- Display current stock, sold count, and available quantity
-- Add "Restock" quick action button
-- Show "Out of Stock" badge for 0 stock items
-
-**2. Product Detail Page (`ProductDetail.tsx`)**
-- Show available stock count (e.g., "Only 3 left in stock")
-- Display "Out of Stock" or "Sold Out" badge when stock = 0
-- Disable Buy/Order button when out of stock
-- Grey out unavailable products
-
-**3. Order Form (`OrderForm.tsx`)**
-- Validate stock availability before order submission
-- Show error if product is out of stock
-- Block order if stock = 0
-
-**4. Stock Update Logic**
-- Create database trigger to:
-  - Decrease stock on order creation
-  - Increase stock on order deletion
-  - Increase stock on order return
-
----
-
-## Part 4: Order Delete & Return Handling
-
-### Database Changes
-
-**Update `orders` table status options:**
-- Add "returned" status option
-
-**Create database function for stock restoration:**
-```text
-restore_stock_from_order(order_id)
-- Parses order items JSON
-- Restores stock_quantity for each product
-- Increments sold_count (negative for returns)
-```
-
-### Admin Orders Page Updates
-
-**1. Add action buttons:**
-- Delete Order button (with confirmation)
-- Mark as Returned button
-
-**2. Delete Order Logic:**
-- Confirm deletion with user
-- Call stock restoration function
-- Remove order from database
-
-**3. Return Order Logic:**
-- Update status to "returned"
-- Call stock restoration function
-- Keep order in database for records
-
----
-
-## Part 5: Referral System
+## Part 3: Membership System
 
 ### Database Schema
 
-**Create new `referrals` table:**
-```text
-+------------------------+
-|       referrals        |
-+------------------------+
-| id (uuid, PK)          |
-| referrer_name (text)   |
-| code (text, unique)    |
-| commission_type (text) |  <- 'fixed' or 'percentage'
-| commission_value (num) |
-| is_active (boolean)    |
-| created_at (timestamp) |
-+------------------------+
-```
+**Create `members` table:**
+- `id` (uuid, PK)
+- `member_code` (text, unique) - e.g., "UC-M0001"
+- `name` (text)
+- `phone` (text)
+- `address` (text)
+- `email` (text, nullable)
+- `total_purchases` (numeric)
+- `order_count` (integer)
+- `discount_value` (numeric)
+- `discount_type` (text) - 'fixed' or 'percentage'
+- `is_active` (boolean)
+- `created_at`, `updated_at` (timestamps)
 
-### Admin Panel
+**Create `settings` table:**
+- `key` (text, PK)
+- `value` (jsonb)
+- `updated_at` (timestamp)
 
-**Create new `AdminReferrals.tsx` page:**
-- Add/Edit/Delete referral codes
-- Set referrer name, code, commission type/value
-- Toggle active/inactive status
-- Dashboard showing:
-  - Total orders per referral
-  - Total sales per referral
-  - Total commission earned
+**Add to `orders` table:**
+- `member_id` (uuid, nullable, references members)
 
-### Order Form Updates
+### Membership Features
 
-**Add referral code input:**
-- Optional field
-- Validate code exists in database
-- Save referral_code with order (no discount applied)
+**Auto-Detection:**
+- Customer enters phone number
+- System checks for existing member
+- Auto-fills name and applies discount
 
-### Admin Orders Updates
+**Auto-Granting:**
+- Admin sets purchase threshold (e.g., ৳5,000)
+- When total purchases exceed threshold, membership is created
+- Congratulations message shown after order
 
-- Show referral code used (if any)
-- Filter orders by referral code
+**Admin Members Page:**
+- List all members with codes, purchases, discounts
+- Add/Edit/Delete members
+- View member order history
+- Set membership threshold
 
 ---
 
-## Part 6: Category & Inventory Insights
+## Part 4: PDF Receipt Generation
 
-### Admin Categories Page
+### Edge Function: `generate-receipt`
 
-**Add statistics per category:**
-- Total products count
-- Total available stock
-- Total sold count
+Creates professional PDF receipt with:
 
-### Admin Dashboard
+```text
++------------------------------------------+
+|          UNITY COLLECTION                |
+|        Premium Bangladeshi Punjabi       |
+|                                          |
+|  INVOICE                                 |
+|  ----------------------------------------|
+|  Order ID: UC-1234                       |
+|  Date: January 26, 2026                  |
+|  ----------------------------------------|
+|  Customer: Mohammad Ali                  |
+|  Phone: 01712345678                      |
+|  Address: 123 Main St, Rajshahi          |
+|  ----------------------------------------|
+|  Items:                                  |
+|  1. Royal Blue Punjabi (XL) x1   ৳1,200 |
+|  2. Classic White Punjabi (M) x2 ৳3,000 |
+|  ----------------------------------------|
+|  Subtotal:                      ৳4,200   |
+|  Delivery:                        ৳60    |
+|  Discount:                      -৳420    |
+|  ----------------------------------------|
+|  TOTAL:                        ৳3,840    |
+|  ----------------------------------------|
+|  Thank you for shopping with us!         |
+|  Contact: +8801880545357                 |
+|                                          |
+|  ----------------------------------------|
+|  Designed by Shomik                      |
+|  shomikujzaman.vercel.app                |
++------------------------------------------+
+```
 
-**Enhanced statistics:**
-- Total stock value (sum of price * stock)
-- Low stock alerts (items with stock less than 5)
-- Top selling products
-- Referral performance summary
+**Footer includes:**
+- "Designed by Shomik" text
+- Link to portfolio: https://shomikujzaman.vercel.app/
+- When printed, URL is visible
 
-### Frontend Category View (Optional)
+### Receipt Access Points
 
-- Show product count per category on category cards
+**Customer Side:**
+- "Download Receipt" button after placing order
+- Success modal includes download option
+
+**Admin Side:**
+- "Download Receipt" button in order details
+- Can generate and share via WhatsApp
+
+---
+
+## Part 5: Quick-Add Cart Button on Product Cards (NEW)
+
+### Implementation
+
+Modify `ProductCard.tsx` to include a quick-add button:
+
+**Visual Design:**
+- Shopping cart icon button in bottom-right corner of product image
+- Appears on hover (desktop) / always visible (mobile)
+- Gold background with white icon
+- Disabled/hidden for out-of-stock items
+
+**Behavior:**
+- Click adds product to cart with default size (first available)
+- Shows toast: "Added to cart!"
+- Button animates on click
+- If product has multiple sizes, shows size selector popup
+
+**Product Card Layout:**
+```text
++------------------------+
+|      [Product Image]   |
+|                   [+]  | <- Quick add button
++------------------------+
+| Category               |
+| Product Name           |
+| ৳1,200  ৳1,500        |
++------------------------+
+```
+
+### Files to Modify
+
+- `src/components/shop/ProductCard.tsx` - Add quick-add button
+- Update Product interface to include `sizes` array
+
+---
+
+## Part 6: Mini Cart Dropdown (NEW)
+
+### Implementation
+
+Create `MiniCart.tsx` component that shows on cart icon hover:
+
+**Visual Design:**
+```text
++--------------------------------+
+|  Your Cart (3 items)           |
++--------------------------------+
+| [img] Royal Blue Punjabi   x1  |
+|       Size: XL        ৳1,200   |
++--------------------------------+
+| [img] Classic White...     x2  |
+|       Size: M         ৳3,000   |
++--------------------------------+
+|  Subtotal:           ৳4,200    |
++--------------------------------+
+| [View Cart]  [Checkout]        |
++--------------------------------+
+```
+
+**Features:**
+- Shows on hover over cart icon (desktop)
+- Displays up to 3 items with "and X more..." if more
+- Each item shows: thumbnail, name, size, quantity, price
+- Quick remove button (X) on each item
+- "View Cart" links to /cart page
+- "Checkout" opens WhatsApp directly
+- Smooth fade-in animation
+- Closes when mouse leaves
+
+**Mobile Behavior:**
+- On mobile, cart icon click goes directly to cart page
+- No hover dropdown (touch devices)
+
+### Files to Create/Modify
+
+- `src/components/cart/MiniCart.tsx` - New dropdown component
+- `src/components/cart/CartIcon.tsx` - Add hover state and MiniCart
 
 ---
 
 ## Technical Implementation Summary
 
-### Database Migrations Required
+### Database Migrations
 
-1. Create `product-images` storage bucket
-2. Add `stock_quantity` and `sold_count` to products
-3. Add `referral_code` to orders
-4. Create `referrals` table with RLS policies
-5. Create stock management database functions
+1. Create `members` table with RLS policies
+2. Create `settings` table for global config
+3. Add `member_id` to `orders` table
+4. Insert sample banners
+5. Create member code generation function
 
-### Files to Create
+### New Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/lib/imageUpload.ts` | Supabase Storage upload with compression |
-| `src/pages/admin/AdminReferrals.tsx` | Referral management page |
+| `src/pages/admin/AdminMembers.tsx` | Member management page |
+| `src/components/cart/MiniCart.tsx` | Mini cart dropdown |
+| `supabase/functions/generate-receipt/index.ts` | PDF receipt generation |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/admin/ImageUpload.tsx` | Switch to Supabase Storage |
-| `src/components/admin/MultiImageUpload.tsx` | Switch to Supabase Storage |
-| `src/pages/admin/AdminProducts.tsx` | Add stock management UI |
-| `src/pages/admin/AdminOrders.tsx` | Add delete/return actions |
-| `src/pages/admin/AdminCategories.tsx` | Add inventory insights |
-| `src/pages/admin/AdminDashboard.tsx` | Enhanced statistics |
-| `src/pages/ProductDetail.tsx` | Stock availability display |
-| `src/components/product/OrderForm.tsx` | Stock validation + referral input |
-| `src/components/shop/ProductCard.tsx` | Out of stock badge |
-| `src/App.tsx` | Add referrals route |
-| `src/components/admin/AdminLayout.tsx` | Add referrals nav link |
+| `src/components/admin/AdminLayout.tsx` | Reorder navigation, add Members link |
+| `src/components/shop/ProductCard.tsx` | Add quick-add cart button |
+| `src/components/cart/CartIcon.tsx` | Add MiniCart dropdown on hover |
+| `src/pages/Cart.tsx` | Member detection, congratulations message |
+| `src/pages/admin/AdminOrders.tsx` | Add download receipt button |
+| `src/App.tsx` | Add AdminMembers route |
 
-### Files to Delete
+### Edge Function: generate-receipt
 
-| File | Reason |
-|------|--------|
-| `supabase/functions/cloudinary-upload/index.ts` | Replaced by Supabase Storage |
-| `src/lib/cloudinaryUpload.ts` | No longer needed |
+Uses `@pdf-lib` for PDF creation:
+- Unity Collection header with branding
+- Complete order details
+- Item breakdown with sizes
+- Pricing summary with discounts
+- Contact information
+- **"Designed by Shomik" footer with portfolio link**
 
 ---
 
 ## Implementation Order
 
-1. **Phase 1**: Database migrations (storage bucket, table changes)
-2. **Phase 2**: Image upload system replacement
-3. **Phase 3**: Add sample products
-4. **Phase 4**: Stock management UI and logic
-5. **Phase 5**: Order delete/return functionality
-6. **Phase 6**: Referral system
-7. **Phase 7**: Category insights and dashboard updates
+1. **Phase 1**: Insert sample banners (database)
+2. **Phase 2**: Reorder admin navigation
+3. **Phase 3**: Create members database and AdminMembers page
+4. **Phase 4**: Update Cart for member detection
+5. **Phase 5**: Create PDF receipt edge function
+6. **Phase 6**: Add receipt download buttons
+7. **Phase 7**: Add quick-add cart button to ProductCard
+8. **Phase 8**: Create MiniCart dropdown component
+
+---
+
+## User Experience Flow
+
+### Quick Shopping Flow (New)
+1. Customer browses shop page
+2. Hovers over product card, sees quick-add button
+3. Clicks quick-add, product added to cart
+4. Hovers over cart icon, sees mini cart preview
+5. Clicks "Checkout" for instant WhatsApp order
+6. OR clicks "View Cart" for full cart page
+
+### Member Shopping Flow
+1. Member adds items to cart
+2. Goes to cart, enters phone number
+3. System detects member, shows "Welcome back, [Name]!"
+4. Member discount auto-applied
+5. Places order via WhatsApp
+6. Downloads receipt with "Designed by Shomik" footer
+
