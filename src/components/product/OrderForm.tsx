@@ -167,7 +167,7 @@ export function OrderForm({ product }: OrderFormProps) {
         phone: data.phone,
         address: data.address,
         delivery_area: data.deliveryArea,
-        items: JSON.stringify([
+        items: [
           {
             product_id: product.id,
             name: product.name,
@@ -175,7 +175,7 @@ export function OrderForm({ product }: OrderFormProps) {
             size: product.size,
             quantity: 1,
           },
-        ]),
+        ],
         subtotal,
         discount_amount: discount,
         coupon_code: appliedCoupon?.code || null,
