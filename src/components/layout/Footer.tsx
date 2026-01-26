@@ -10,13 +10,16 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to="/" className="inline-block mb-4">
+            <Link to="/" className="inline-block mb-2">
               <img 
                 src={LOGO_URL} 
                 alt="Unity Collection" 
                 className="h-16 w-auto"
               />
             </Link>
+            <h3 className="font-heading text-lg font-semibold text-gold mb-3">
+              Unity Collection
+            </h3>
             <p className="text-sm text-primary-foreground/80 leading-relaxed">
               Premium Bangladeshi traditional clothing for men. 
               Elegant designs for Eid, Ramadan, and special occasions.

@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { Heart, Target, Users, Award, ShieldCheck, Shirt } from "lucide-react";
+import { Heart, Target, Users, Award, ShieldCheck, Shirt, Facebook, Instagram } from "lucide-react";
 
 const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
@@ -208,11 +208,39 @@ const About = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center"
+            className="text-center space-y-4"
           >
             <p className="text-muted">
-              Founded & Managed by <span className="text-foreground font-semibold">Ibn E Habib</span>
+              Founded & Managed by{" "}
+              <a 
+                href="https://www.facebook.com/ibn.e.habib.528372"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground font-semibold hover:text-gold transition-colors"
+              >
+                Ibn E Habib
+              </a>
             </p>
+            <div className="flex justify-center gap-4">
+              <a 
+                href="https://www.facebook.com/UnityCollectionBd" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5 text-primary-foreground" />
+              </a>
+              <a 
+                href="https://www.instagram.com/unitycollectionbd" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5 text-primary-foreground" />
+              </a>
+            </div>
           </motion.section>
         </div>
       </div>
