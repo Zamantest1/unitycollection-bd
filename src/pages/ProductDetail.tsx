@@ -73,6 +73,9 @@ const ProductDetail = () => {
   const displayPrice = hasDiscount ? product.discount_price : product.price;
   const images = product.image_urls?.length ? product.image_urls : ["/placeholder.svg"];
   const sizes = product.sizes || [];
+  const stockQuantity = product.stock_quantity || 0;
+  const isOutOfStock = stockQuantity === 0;
+  const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
 
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -87,7 +90,7 @@ const ProductDetail = () => {
       <div className="bg-background min-h-screen">
         {/* Breadcrumb */}
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-foreground">Home</Link>
             <span>/</span>
             <Link to="/shop" className="hover:text-foreground">Shop</Link>
@@ -104,14 +107,22 @@ const ProductDetail = () => {
                 <img
                   src={images[currentImage]}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover ${isOutOfStock ? "opacity-60" : ""}`}
                 />
                 
-                {hasDiscount && (
-                  <Badge className="absolute top-4 left-4 bg-gold text-gold-foreground text-sm px-3 py-1">
-                    -{discountPercent}% OFF
-                  </Badge>
-                )}
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {hasDiscount && (
+                    <Badge className="bg-gold text-gold-foreground text-sm px-3 py-1">
+                      -{discountPercent}% OFF
+                    </Badge>
+                  )}
+                  {isOutOfStock && (
+                    <Badge variant="destructive" className="text-sm px-3 py-1">
+                      Sold Out
+                    </Badge>
+                  )}
+                </div>
 
                 {images.length > 1 && (
                   <>
@@ -153,7 +164,7 @@ const ProductDetail = () => {
             <div>
               {/* Category */}
               {product.categories?.name && (
-                <p className="text-sm text-muted uppercase tracking-wide mb-2">
+                <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
                   {product.categories.name}
                 </p>
               )}
@@ -164,14 +175,34 @@ const ProductDetail = () => {
               </h1>
 
               {/* Price */}
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="text-gold font-bold text-2xl md:text-3xl">
                   ৳{displayPrice?.toLocaleString()}
                 </span>
                 {hasDiscount && (
-                  <span className="text-muted line-through text-lg">
+                  <span className="text-muted-foreground line-through text-lg">
                     ৳{product.price.toLocaleString()}
                   </span>
+                )}
+              </div>
+
+              {/* Stock Status */}
+              <div className="mb-6">
+                {isOutOfStock ? (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-md">
+                    <span className="h-2 w-2 rounded-full bg-destructive" />
+                    <span className="text-sm font-medium">Out of Stock</span>
+                  </div>
+                ) : isLowStock ? (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 text-yellow-700 rounded-md">
+                    <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                    <span className="text-sm font-medium">Only {stockQuantity} left in stock</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 text-green-700 rounded-md">
+                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                    <span className="text-sm font-medium">In Stock ({stockQuantity} available)</span>
+                  </div>
                 )}
               </div>
 
@@ -179,7 +210,7 @@ const ProductDetail = () => {
               {product.description && (
                 <div className="mb-6">
                   <h3 className="font-semibold text-foreground mb-2">Description</h3>
-                  <p className="text-muted leading-relaxed">{product.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">{product.description}</p>
                 </div>
               )}
 
@@ -192,9 +223,12 @@ const ProductDetail = () => {
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size)}
+                        disabled={isOutOfStock}
                         className={`px-4 py-2 rounded-md border-2 font-medium transition-colors ${
                           selectedSize === size
                             ? "border-primary bg-primary text-primary-foreground"
+                            : isOutOfStock
+                            ? "border-border opacity-50 cursor-not-allowed"
                             : "border-border hover:border-primary"
                         }`}
                       >
@@ -206,14 +240,26 @@ const ProductDetail = () => {
               )}
 
               {/* Order Form */}
-              <OrderForm
-                product={{
-                  id: product.id,
-                  name: product.name,
-                  price: displayPrice!,
-                  size: selectedSize || undefined,
-                }}
-              />
+              {isOutOfStock ? (
+                <div className="border-t border-border pt-6">
+                  <Button disabled className="w-full" size="lg">
+                    Out of Stock
+                  </Button>
+                  <p className="text-sm text-muted-foreground text-center mt-3">
+                    This product is currently unavailable. Please check back later.
+                  </p>
+                </div>
+              ) : (
+                <OrderForm
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    price: displayPrice!,
+                    size: selectedSize || undefined,
+                    stockQuantity,
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>

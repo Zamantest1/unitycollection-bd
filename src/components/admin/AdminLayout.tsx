@@ -11,8 +11,8 @@ import {
   Bell, 
   LogOut,
   Menu,
-  X,
-  ChevronLeft
+  ChevronLeft,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ const navItems = [
   { name: "Categories", path: "/admin/categories", icon: FolderOpen },
   { name: "Banners", path: "/admin/banners", icon: Image },
   { name: "Coupons", path: "/admin/coupons", icon: Tag },
+  { name: "Referrals", path: "/admin/referrals", icon: Users },
   { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
   { name: "Notice Bar", path: "/admin/notice", icon: Bell },
 ];
