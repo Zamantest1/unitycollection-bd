@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -91,7 +91,23 @@ const AdminMembers = () => {
       });
       return settingsMap;
     },
+    staleTime: 0,
   });
+
+  // Load settings into state when data is fetched
+  useEffect(() => {
+    if (settings) {
+      if (settings.membership_threshold?.amount !== undefined) {
+        setThresholdAmount(settings.membership_threshold.amount.toString());
+      }
+      if (settings.default_member_discount?.value !== undefined) {
+        setDefaultDiscount(settings.default_member_discount.value.toString());
+      }
+      if (settings.default_member_discount?.type) {
+        setDefaultDiscountType(settings.default_member_discount.type);
+      }
+    }
+  }, [settings]);
 
   // Fetch member orders when viewing history
   const { data: memberOrders = [] } = useQuery({
