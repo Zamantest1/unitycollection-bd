@@ -266,16 +266,29 @@ Deno.serve(async (req) => {
       x: leftMargin + 100, y: footerY, size: 8, font: helvetica, color: primaryColor 
     });
 
-    // Generate PDF bytes
+    // Generate PDF bytes and encode as base64
     const pdfBytes = await pdfDoc.save();
+    
+    // Convert to base64 for safe transport via JSON
+    let binary = "";
+    const bytes = new Uint8Array(pdfBytes);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Pdf = btoa(binary);
 
-    return new Response(pdfBytes as unknown as ArrayBuffer, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="receipt-${order.order_id}.pdf"`,
-      },
-    });
+    return new Response(
+      JSON.stringify({ 
+        pdf: base64Pdf, 
+        filename: `receipt-${order.order_id}.pdf` 
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
   } catch (error) {
     console.error("Error generating receipt:", error);

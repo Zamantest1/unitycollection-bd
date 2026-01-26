@@ -1,10 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { X, ShoppingBag, MessageCircle } from "lucide-react";
-
-const WHATSAPP_NUMBER = "8801880545357";
+import { X, ShoppingBag, ShoppingCart } from "lucide-react";
 
 interface MiniCartProps {
   isOpen: boolean;
@@ -13,24 +11,14 @@ interface MiniCartProps {
 
 export function MiniCart({ isOpen, onClose }: MiniCartProps) {
   const { items, removeItem, subtotal, itemCount } = useCart();
+  const navigate = useNavigate();
 
   const displayItems = items.slice(0, 3);
   const remainingCount = items.length - 3;
 
-  const handleQuickCheckout = () => {
-    const itemsList = items
-      .map((item) => `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - ৳${item.price * item.quantity}`)
-      .join("\n");
-
-    const message = encodeURIComponent(
-      `🛍️ *Quick Order from Unity Collection*\n\n` +
-        `🛒 *Products:*\n${itemsList}\n\n` +
-        `💰 *Subtotal:* ৳${subtotal}\n\n` +
-        `Please provide your name, phone, and address to complete the order.`
-    );
-
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+  const handleProceedToCheckout = () => {
     onClose();
+    navigate("/cart");
   };
 
   return (
@@ -108,9 +96,9 @@ export function MiniCart({ isOpen, onClose }: MiniCartProps) {
                   <Button 
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" 
                     size="sm"
-                    onClick={handleQuickCheckout}
+                    onClick={handleProceedToCheckout}
                   >
-                    <MessageCircle className="h-4 w-4 mr-1" />
+                    <ShoppingCart className="h-4 w-4 mr-1" />
                     Checkout
                   </Button>
                 </div>
