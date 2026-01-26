@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Trash2, RotateCcw, Loader2 } from "lucide-react";
+import { Search, Eye, Trash2, RotateCcw, Loader2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const statusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
@@ -83,6 +83,35 @@ const AdminOrders = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  // Download receipt
+  const downloadReceipt = async (orderId: string, orderCode: string) => {
+    try {
+      toast({ title: "Generating receipt..." });
+      
+      const { data, error } = await supabase.functions.invoke("generate-receipt", {
+        body: { orderId },
+      });
+
+      if (error) throw error;
+
+      // Create blob and download
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt-${orderCode}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: "Receipt downloaded!" });
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast({ title: "Failed to download receipt", description: error.message, variant: "destructive" });
+    }
+  };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -298,9 +327,19 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                Ordered: {new Date(selectedOrder.created_at).toLocaleString()}
-              </p>
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Ordered: {new Date(selectedOrder.created_at).toLocaleString()}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => downloadReceipt(selectedOrder.id, selectedOrder.order_id)}
+                  className="bg-primary text-primary-foreground"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Receipt
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

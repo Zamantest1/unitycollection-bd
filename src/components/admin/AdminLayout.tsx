@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
-  Users
+  Users,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,11 +28,12 @@ interface AdminLayoutProps {
 const navItems = [
   { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { name: "Products", path: "/admin/products", icon: Package },
+  { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
   { name: "Categories", path: "/admin/categories", icon: FolderOpen },
   { name: "Banners", path: "/admin/banners", icon: Image },
   { name: "Coupons", path: "/admin/coupons", icon: Tag },
   { name: "Referrals", path: "/admin/referrals", icon: Users },
-  { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
+  { name: "Members", path: "/admin/members", icon: UserCheck },
   { name: "Notice Bar", path: "/admin/notice", icon: Bell },
 ];
 

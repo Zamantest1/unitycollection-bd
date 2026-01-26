@@ -107,6 +107,54 @@ export type Database = {
         }
         Relationships: []
       }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          email: string | null
+          id: string
+          is_active: boolean | null
+          member_code: string
+          name: string
+          order_count: number
+          phone: string
+          total_purchases: number
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_code: string
+          name: string
+          order_count?: number
+          phone: string
+          total_purchases?: number
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_code?: string
+          name?: string
+          order_count?: number
+          phone?: string
+          total_purchases?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notice_settings: {
         Row: {
           created_at: string
@@ -141,6 +189,7 @@ export type Database = {
           discount_amount: number | null
           id: string
           items: Json
+          member_id: string | null
           order_id: string
           phone: string
           referral_code: string | null
@@ -158,6 +207,7 @@ export type Database = {
           discount_amount?: number | null
           id?: string
           items?: Json
+          member_id?: string | null
           order_id: string
           phone: string
           referral_code?: string | null
@@ -175,6 +225,7 @@ export type Database = {
           discount_amount?: number | null
           id?: string
           items?: Json
+          member_id?: string | null
           order_id?: string
           phone?: string
           referral_code?: string | null
@@ -183,7 +234,15 @@ export type Database = {
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -274,6 +333,24 @@ export type Database = {
           is_active?: boolean | null
           referrer_name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
         }
         Relationships: []
       }
