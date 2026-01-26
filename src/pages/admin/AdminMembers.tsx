@@ -250,11 +250,11 @@ const AdminMembers = () => {
     <AdminLayout title="Members">
       <Tabs defaultValue="members">
         <TabsList className="mb-6">
-          <TabsTrigger value="members" className="flex items-center gap-2">
+          <TabsTrigger value="members" className="flex items-center gap-2 text-foreground">
             <CreditCard className="h-4 w-4" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className="flex items-center gap-2 text-foreground">
             <Settings className="h-4 w-4" />
             Settings
           </TabsTrigger>
