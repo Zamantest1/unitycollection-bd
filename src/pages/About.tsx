@@ -63,8 +63,7 @@ const About = () => {
                 Our <span className="text-gold">Story</span>
               </h2>
               <div className="space-y-4 text-muted leading-relaxed">
-                <p>
-                  <strong className="text-foreground"> (Panjabi)</strong> is a Bangladeshi traditional clothing brand focused on men's ethnic wear, especially <span className="text-gold font-medium">Punjabi (Panjabi)</span>, designed for cultural, religious, and festive occasions such as Eid, Ramadan, weddings, and special family events.
+                <p> (Unity Collection) is a Bangladeshi traditional clothing brand focused on men's ethnic wear, especially Punjabi, designed for cultural, religious, and festive occasions such as Eid, Ramadan, weddings, and special family events.<strong className="text-foreground"> ()</strong> is a Bangladeshi traditional clothing brand focused on men's ethnic wear, especially <span className="text-gold font-medium">Punjabi (Panjabi)</span>, designed for cultural, religious, and festive occasions such as Eid, Ramadan, weddings, and special family events.
                 </p>
                 <p>
                   The brand was initially operated as a seasonal business, mainly active during Eid collections. Over time, Unity Collection has built strong customer trust and demand, leading to a decision to transform the business into a long-term, year-round brand with a strong online presence.
