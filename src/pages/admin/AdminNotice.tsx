@@ -81,15 +81,15 @@ const AdminNotice = () => {
 
   return (
     <AdminLayout title="Notice Bar">
-      <div className="w-full max-w-xl mx-auto px-2 sm:px-0">
-        <Card>
-          <CardHeader className="px-4 sm:px-6">
+      <div className="w-full max-w-xl mx-auto">
+        <Card className="w-full overflow-hidden">
+          <CardHeader className="px-3 sm:px-6 py-4">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gold" />
-              Scrolling Notice Bar
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gold flex-shrink-0" />
+              <span>Scrolling Notice Bar</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-4 sm:px-6">
+          <CardContent className="px-3 sm:px-6 pb-4">
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <Label className="text-sm sm:text-base">Notice Text</Label>
@@ -97,21 +97,22 @@ const AdminNotice = () => {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="🎉 Free delivery inside Dhaka!"
-                  className="text-sm sm:text-base"
+                  className="text-sm sm:text-base w-full"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground break-words">
                   This text will scroll across the top of your store. Use emojis for visual appeal!
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gold-soft/30 rounded-lg">
-                <div className="flex-1">
-                  <Label className="text-sm sm:text-base font-medium">Show Notice Bar</Label>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Toggle visibility on the storefront</p>
+              <div className="flex items-center justify-between gap-3 p-3 sm:p-4 bg-gold-soft/30 rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <Label className="text-sm sm:text-base font-medium block">Show Notice Bar</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Toggle visibility</p>
                 </div>
                 <Switch
                   checked={isActive}
                   onCheckedChange={setIsActive}
+                  className="flex-shrink-0"
                 />
               </div>
 

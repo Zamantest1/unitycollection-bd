@@ -164,7 +164,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-card border-b border-border px-4 py-3 flex items-center gap-4">
           <Button
@@ -179,7 +179,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
