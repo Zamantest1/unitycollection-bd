@@ -1,127 +1,262 @@
 
-
-# Implementation Plan: Homepage Banner Slideshow & Updates
+# Implementation Plan: Inventory, Stock Management, Referral System, and Image Handling
 
 ## Overview
-This plan covers three main tasks:
-1. Enhanced homepage banner with image slideshow and customizable overlays
-2. Update delivery text from "Dhaka" to "Rajshahi"
-3. Create admin user account
+This plan covers a comprehensive upgrade to Unity Collection with:
+1. Replace Cloudinary with Supabase Storage for reliable image uploads
+2. Add sample products with real images
+3. Complete inventory and stock management system
+4. Order delete and return handling with automatic stock restoration
+5. Referral system (extension of coupon system)
+6. Category and inventory insights
 
 ---
 
-## Task 1: Homepage Banner Slideshow with Overlay Options
+## Part 1: Replace Cloudinary with Supabase Storage
+
+Since Cloudinary is not working reliably, we'll switch to Supabase Storage which is already integrated.
 
 ### Database Changes
-Add a new column to the `banners` table to support overlay selection:
+Create a storage bucket for product images:
+- Bucket name: `product-images`
+- Public access: Yes (for image URLs)
+- Automatic compression via URL transformations
 
+### Files to Create/Modify
+
+**1. Create new image upload utilities**
+- `src/lib/imageUpload.ts` - New utility for Supabase Storage uploads with compression
+  - Compress images on client-side before upload (using canvas API)
+  - Maximum dimension: 1200px
+  - Quality: 80%
+  - Output format: WebP for better compression
+
+**2. Update upload components**
+- `src/components/admin/ImageUpload.tsx` - Use Supabase Storage instead of Cloudinary
+- `src/components/admin/MultiImageUpload.tsx` - Use Supabase Storage
+
+**3. Delete Cloudinary edge function** (no longer needed)
+- Remove `supabase/functions/cloudinary-upload/`
+
+---
+
+## Part 2: Add Sample Products
+
+Insert 8 sample products with placeholder images from Unsplash/Pexels (royalty-free):
+
+| Product Name | Category | Price | Stock |
+|-------------|----------|-------|-------|
+| Royal Blue Punjabi | Casual Punjabi | 1,200 | 25 |
+| Elegant Cream Punjabi | Premium Collection | 2,500 | 15 |
+| Festive Red Punjabi | Festive Wear | 1,800 | 20 |
+| Classic White Punjabi | Eid Collection | 1,500 | 30 |
+| Navy Traditional Punjabi | Casual Punjabi | 1,100 | 35 |
+| Golden Embroidered Punjabi | Premium Collection | 3,200 | 10 |
+| Maroon Wedding Punjabi | Festive Wear | 2,800 | 12 |
+| Sky Blue Cotton Punjabi | Casual Punjabi | 950 | 40 |
+
+---
+
+## Part 3: Inventory & Stock Management
+
+### Database Schema Changes
+
+**Add columns to `products` table:**
 ```text
 +------------------+
-|     banners      |
+|     products     |
 +------------------+
 | (existing cols)  |
-| + overlay_type   |  <- NEW: 'green' | 'gold' | 'none'
+| + stock_quantity |  <- integer, default 0
+| + sold_count     |  <- integer, default 0
 +------------------+
 ```
 
-**Migration SQL:**
-```sql
-ALTER TABLE banners 
-ADD COLUMN overlay_type text DEFAULT 'green' 
-CHECK (overlay_type IN ('green', 'gold', 'none'));
+**Add columns to `orders` table:**
+```text
++------------------+
+|     orders       |
++------------------+
+| (existing cols)  |
+| + referral_code  |  <- text, nullable
++------------------+
 ```
 
 ### Frontend Changes
 
-**1. Update HeroBanner.tsx**
-- Keep current slideshow logic (already working)
-- Add dynamic overlay based on `overlay_type` from database:
-  - `green`: Dark green gradient overlay (current default)
-  - `gold`: Gold/amber gradient overlay
-  - `none`: Subtle dark overlay for text readability
-- Maintain default green background when no banners exist
-- Ensure responsive sizing for mobile and desktop
+**1. Admin Products Page (`AdminProducts.tsx`)**
+- Add stock quantity input field
+- Display current stock, sold count, and available quantity
+- Add "Restock" quick action button
+- Show "Out of Stock" badge for 0 stock items
 
-**2. Update AdminBanners.tsx**
-- Add overlay type selector (dropdown with Green/Gold/None options)
-- Preview of overlay effect when selecting
-- Update form to include overlay_type field
+**2. Product Detail Page (`ProductDetail.tsx`)**
+- Show available stock count (e.g., "Only 3 left in stock")
+- Display "Out of Stock" or "Sold Out" badge when stock = 0
+- Disable Buy/Order button when out of stock
+- Grey out unavailable products
 
-### Visual Design
+**3. Order Form (`OrderForm.tsx`)**
+- Validate stock availability before order submission
+- Show error if product is out of stock
+- Block order if stock = 0
+
+**4. Stock Update Logic**
+- Create database trigger to:
+  - Decrease stock on order creation
+  - Increase stock on order deletion
+  - Increase stock on order return
+
+---
+
+## Part 4: Order Delete & Return Handling
+
+### Database Changes
+
+**Update `orders` table status options:**
+- Add "returned" status option
+
+**Create database function for stock restoration:**
 ```text
-+------------------------------------------+
-|  Homepage Banner with Slideshow          |
-+------------------------------------------+
-|                                          |
-|  [Background Image - Auto-slides]        |
-|  +------------------------------------+  |
-|  |  Overlay Layer (Green/Gold/None)  |  |
-|  |  +------------------------------+ |  |
-|  |  |  Title Text                  | |  |
-|  |  |  Subtitle                    | |  |
-|  |  |  [Shop Now Button]           | |  |
-|  |  +------------------------------+ |  |
-|  +------------------------------------+  |
-|                                          |
-|  [Dots Navigation]  [< >] Arrows         |
-+------------------------------------------+
+restore_stock_from_order(order_id)
+- Parses order items JSON
+- Restores stock_quantity for each product
+- Increments sold_count (negative for returns)
 ```
 
----
+### Admin Orders Page Updates
 
-## Task 2: Location Updates (Dhaka → Rajshahi)
+**1. Add action buttons:**
+- Delete Order button (with confirmation)
+- Mark as Returned button
 
-### Files to Update
+**2. Delete Order Logic:**
+- Confirm deletion with user
+- Call stock restoration function
+- Remove order from database
 
-| File | Change |
-|------|--------|
-| `src/components/home/WhyChooseUs.tsx` | "Dhaka: 1-2 days" → "Rajshahi: 1-2 days" |
-| `src/components/product/OrderForm.tsx` | "Inside Dhaka" → "Inside Rajshahi", "Outside Dhaka" → "Outside Rajshahi" |
-| `index.html` | Meta description: "Free delivery in Dhaka" → "Free delivery in Rajshahi" |
-
----
-
-## Task 3: Admin User Setup
-
-### Process
-1. Create user in Supabase Auth with:
-   - Email: `unitycollectionbd@gmail.com`
-   - Password: `unitycollectionbd2024`
-
-2. Add admin role to `user_roles` table:
-   - Link user_id to the new user
-   - Set role = 'admin'
-
-### Note
-This requires using Supabase Admin API to create the user, then inserting the role record. The user will be able to log in at `/admin/login` after setup.
+**3. Return Order Logic:**
+- Update status to "returned"
+- Call stock restoration function
+- Keep order in database for records
 
 ---
 
-## Technical Summary
+## Part 5: Referral System
 
-### Database Migration
-```sql
--- Add overlay_type to banners
-ALTER TABLE banners 
-ADD COLUMN overlay_type text DEFAULT 'green' 
-CHECK (overlay_type IN ('green', 'gold', 'none'));
+### Database Schema
+
+**Create new `referrals` table:**
+```text
++------------------------+
+|       referrals        |
++------------------------+
+| id (uuid, PK)          |
+| referrer_name (text)   |
+| code (text, unique)    |
+| commission_type (text) |  <- 'fixed' or 'percentage'
+| commission_value (num) |
+| is_active (boolean)    |
+| created_at (timestamp) |
++------------------------+
 ```
+
+### Admin Panel
+
+**Create new `AdminReferrals.tsx` page:**
+- Add/Edit/Delete referral codes
+- Set referrer name, code, commission type/value
+- Toggle active/inactive status
+- Dashboard showing:
+  - Total orders per referral
+  - Total sales per referral
+  - Total commission earned
+
+### Order Form Updates
+
+**Add referral code input:**
+- Optional field
+- Validate code exists in database
+- Save referral_code with order (no discount applied)
+
+### Admin Orders Updates
+
+- Show referral code used (if any)
+- Filter orders by referral code
+
+---
+
+## Part 6: Category & Inventory Insights
+
+### Admin Categories Page
+
+**Add statistics per category:**
+- Total products count
+- Total available stock
+- Total sold count
+
+### Admin Dashboard
+
+**Enhanced statistics:**
+- Total stock value (sum of price * stock)
+- Low stock alerts (items with stock less than 5)
+- Top selling products
+- Referral performance summary
+
+### Frontend Category View (Optional)
+
+- Show product count per category on category cards
+
+---
+
+## Technical Implementation Summary
+
+### Database Migrations Required
+
+1. Create `product-images` storage bucket
+2. Add `stock_quantity` and `sold_count` to products
+3. Add `referral_code` to orders
+4. Create `referrals` table with RLS policies
+5. Create stock management database functions
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/lib/imageUpload.ts` | Supabase Storage upload with compression |
+| `src/pages/admin/AdminReferrals.tsx` | Referral management page |
 
 ### Files to Modify
-1. `src/components/home/HeroBanner.tsx` - Add overlay type rendering
-2. `src/pages/admin/AdminBanners.tsx` - Add overlay selector
-3. `src/components/home/WhyChooseUs.tsx` - Update delivery text
-4. `src/components/product/OrderForm.tsx` - Update delivery area labels
-5. `index.html` - Update meta description
 
-### Admin User Creation
-- Will use Supabase to create auth user and assign admin role
+| File | Changes |
+|------|---------|
+| `src/components/admin/ImageUpload.tsx` | Switch to Supabase Storage |
+| `src/components/admin/MultiImageUpload.tsx` | Switch to Supabase Storage |
+| `src/pages/admin/AdminProducts.tsx` | Add stock management UI |
+| `src/pages/admin/AdminOrders.tsx` | Add delete/return actions |
+| `src/pages/admin/AdminCategories.tsx` | Add inventory insights |
+| `src/pages/admin/AdminDashboard.tsx` | Enhanced statistics |
+| `src/pages/ProductDetail.tsx` | Stock availability display |
+| `src/components/product/OrderForm.tsx` | Stock validation + referral input |
+| `src/components/shop/ProductCard.tsx` | Out of stock badge |
+| `src/App.tsx` | Add referrals route |
+| `src/components/admin/AdminLayout.tsx` | Add referrals nav link |
+
+### Files to Delete
+
+| File | Reason |
+|------|--------|
+| `supabase/functions/cloudinary-upload/index.ts` | Replaced by Supabase Storage |
+| `src/lib/cloudinaryUpload.ts` | No longer needed |
 
 ---
 
-## Expected Result
-- Homepage shows image slideshow (if banners exist) with selectable green/gold/no overlay
-- Falls back to green background when no banners configured
-- All "Dhaka" references changed to "Rajshahi"
-- Admin can log in with `unitycollectionbd@gmail.com` / `unitycollectionbd2024`
+## Implementation Order
 
+1. **Phase 1**: Database migrations (storage bucket, table changes)
+2. **Phase 2**: Image upload system replacement
+3. **Phase 3**: Add sample products
+4. **Phase 4**: Stock management UI and logic
+5. **Phase 5**: Order delete/return functionality
+6. **Phase 6**: Referral system
+7. **Phase 7**: Category insights and dashboard updates
