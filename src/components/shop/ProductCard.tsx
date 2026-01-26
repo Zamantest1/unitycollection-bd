@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Check } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
   id: string;
@@ -26,6 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
   const [isAdded, setIsAdded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discountPercent = hasDiscount
@@ -76,12 +78,20 @@ export function ProductCard({ product }: ProductCardProps) {
         to={`/product/${product.id}`}
         className="block group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
       >
-        {/* Image */}
-        <div className="relative aspect-[3/4] overflow-hidden">
+        {/* Image with lazy loading and blur placeholder */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+          {/* Blur placeholder skeleton */}
+          {!imageLoaded && (
+            <Skeleton className="absolute inset-0 w-full h-full" />
+          )}
           <img
             src={imageUrl}
             alt={product.name}
-            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${isOutOfStock ? "opacity-60" : ""}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              isOutOfStock ? "opacity-60" : ""
+            } ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"}`}
           />
           
           {/* Badges */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,9 @@ import { BannerSkeleton } from "@/components/skeletons/BannerSkeleton";
 
 export function HeroBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
 
   const { data: banners = [], isLoading } = useQuery({
     queryKey: ["banners"],
@@ -24,22 +27,52 @@ export function HeroBanner() {
     },
   });
 
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % banners.length);
+  }, [banners.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
+  }, [banners.length]);
+
   useEffect(() => {
     if (banners.length <= 1) return;
     
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
+      nextSlide();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [banners.length]);
+  }, [banners.length, nextSlide]);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % banners.length);
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isSwipe = Math.abs(distance) > minSwipeDistance;
+    
+    if (isSwipe && banners.length > 1) {
+      if (distance > 0) {
+        // Swiped left - go to next slide
+        nextSlide();
+      } else {
+        // Swiped right - go to previous slide
+        prevSlide();
+      }
+    }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   // Show skeleton while loading
@@ -71,7 +104,12 @@ export function HeroBanner() {
   const currentBanner = banners[currentSlide];
 
   return (
-    <section className="relative h-[50vh] md:h-[70vh] overflow-hidden">
+    <section 
+      className="relative h-[50vh] md:h-[70vh] overflow-hidden touch-pan-y"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
