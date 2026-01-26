@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { BannerSkeleton } from "@/components/skeletons/BannerSkeleton";
 
 export function HeroBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const { data: banners = [] } = useQuery({
+  const { data: banners = [], isLoading } = useQuery({
     queryKey: ["banners"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,6 +41,11 @@ export function HeroBanner() {
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
   };
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <BannerSkeleton />;
+  }
 
   // Fallback banner if no banners in database
   if (banners.length === 0) {
