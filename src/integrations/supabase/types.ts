@@ -143,6 +143,7 @@ export type Database = {
           items: Json
           order_id: string
           phone: string
+          referral_code: string | null
           status: string
           subtotal: number
           total: number
@@ -159,6 +160,7 @@ export type Database = {
           items?: Json
           order_id: string
           phone: string
+          referral_code?: string | null
           status?: string
           subtotal: number
           total: number
@@ -175,6 +177,7 @@ export type Database = {
           items?: Json
           order_id?: string
           phone?: string
+          referral_code?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -195,6 +198,8 @@ export type Database = {
           name: string
           price: number
           sizes: string[] | null
+          sold_count: number
+          stock_quantity: number
           updated_at: string
         }
         Insert: {
@@ -209,6 +214,8 @@ export type Database = {
           name: string
           price: number
           sizes?: string[] | null
+          sold_count?: number
+          stock_quantity?: number
           updated_at?: string
         }
         Update: {
@@ -223,6 +230,8 @@ export type Database = {
           name?: string
           price?: number
           sizes?: string[] | null
+          sold_count?: number
+          stock_quantity?: number
           updated_at?: string
         }
         Relationships: [
@@ -234,6 +243,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          code: string
+          commission_type: string
+          commission_value: number
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          referrer_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          commission_type: string
+          commission_value: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          referrer_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          commission_type?: string
+          commission_value?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          referrer_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
