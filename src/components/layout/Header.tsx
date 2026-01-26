@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ShoppingBag, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { CartIcon } from "@/components/cart/CartIcon";
 
 const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
@@ -59,6 +60,7 @@ export function Header() {
             >
               <Search className="h-5 w-5" />
             </Button>
+            <CartIcon />
             <Link to="/shop">
               <Button className="bg-gold text-gold-foreground hover:bg-gold/90 font-medium">
                 <ShoppingBag className="h-4 w-4 mr-2" />
@@ -102,12 +104,19 @@ export function Header() {
                   {link.name}
                 </Link>
               ))}
-              <Link to="/shop" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full bg-gold text-gold-foreground hover:bg-gold/90 mt-4">
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Shop Now
-                </Button>
-              </Link>
+              <div className="flex gap-2 mt-4">
+                <Link to="/cart" onClick={() => setMobileMenuOpen(false)} className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    Cart
+                  </Button>
+                </Link>
+                <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="flex-1">
+                  <Button className="w-full bg-gold text-gold-foreground hover:bg-gold/90">
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Shop Now
+                  </Button>
+                </Link>
+              </div>
             </nav>
           </motion.div>
         )}
