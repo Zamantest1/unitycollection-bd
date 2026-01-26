@@ -65,24 +65,58 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get form data with image
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const folder = formData.get("folder") as string || "unity-collection";
+    // Accept both multipart/form-data (preferred) and JSON payloads (fallback)
+    // JSON payload format:
+    //   { folder: string, dataUri: string, fileType?: string, fileName?: string, fileSize?: number }
+    let folder = "unity-collection";
+    let file: File | null = null;
+    let dataUri: string | null = null;
+    let fileType: string | null = null;
+    let fileName: string | null = null;
+    let fileSize: number | null = null;
 
-    if (!file) {
-      console.log("No file provided");
+    try {
+      const formData = await req.clone().formData();
+      const maybeFile = formData.get("file");
+      if (maybeFile instanceof File) {
+        file = maybeFile;
+        fileType = file.type;
+        fileName = file.name;
+        fileSize = file.size;
+      }
+
+      const maybeFolder = formData.get("folder");
+      if (typeof maybeFolder === "string" && maybeFolder.trim()) {
+        folder = maybeFolder.trim();
+      }
+    } catch (e) {
+      console.log("formData parse failed, trying JSON payload", e);
+      const payload = await req.json().catch(() => null) as any;
+      if (payload && typeof payload === "object") {
+        if (typeof payload.folder === "string" && payload.folder.trim()) {
+          folder = payload.folder.trim();
+        }
+        if (typeof payload.dataUri === "string" && payload.dataUri.startsWith("data:")) {
+          dataUri = payload.dataUri;
+        }
+        if (typeof payload.fileType === "string") fileType = payload.fileType;
+        if (typeof payload.fileName === "string") fileName = payload.fileName;
+        if (typeof payload.fileSize === "number") fileSize = payload.fileSize;
+      }
+    }
+
+    if (!file && !dataUri) {
+      console.log("No file/dataUri provided");
       return new Response(
         JSON.stringify({ error: "No file provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
-
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
+    const resolvedType = file?.type || fileType || "";
+    if (resolvedType && !allowedTypes.includes(resolvedType)) {
       return new Response(
         JSON.stringify({ error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -91,17 +125,25 @@ Deno.serve(async (req) => {
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
+    const resolvedSize = file?.size ?? fileSize;
+    if (typeof resolvedSize === "number" && resolvedSize > maxSize) {
       return new Response(
         JSON.stringify({ error: "File too large. Maximum size is 10MB" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    if (file) {
+      console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
+    } else {
+      console.log(`Processing JSON upload: name=${fileName ?? "(unknown)"}, type=${resolvedType || "(unknown)"}, size=${resolvedSize ?? "(unknown)"}`);
+    }
+
     // Get Cloudinary credentials
     const cloudName = Deno.env.get("CLOUDINARY_CLOUD_NAME");
     const apiKey = Deno.env.get("CLOUDINARY_API_KEY");
-    const apiSecret = Deno.env.get("CLOUDINARY_API_Secret");
+    // support both env var spellings
+    const apiSecret = Deno.env.get("CLOUDINARY_API_SECRET") ?? Deno.env.get("CLOUDINARY_API_Secret");
 
     console.log(`Cloudinary config - cloudName: ${cloudName ? "set" : "missing"}, apiKey: ${apiKey ? "set" : "missing"}, apiSecret: ${apiSecret ? "set" : "missing"}`);
 
@@ -113,10 +155,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Convert file to base64
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    const dataUri = `data:${file.type};base64,${base64}`;
+    // Convert file to data URI if needed
+    if (!dataUri) {
+      const arrayBuffer = await file!.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const chunkSize = 0x8000;
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
+      dataUri = `data:${file!.type};base64,${base64}`;
+    }
 
     // Generate timestamp and signature for Cloudinary
     const timestamp = Math.floor(Date.now() / 1000);

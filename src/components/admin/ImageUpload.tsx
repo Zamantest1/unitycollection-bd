@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { uploadImageToCloudinary } from "@/lib/cloudinaryUpload";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 
 interface ImageUploadProps {
@@ -48,19 +49,7 @@ export function ImageUpload({ value, onChange, folder = "unity-collection", plac
         throw new Error("Not authenticated");
       }
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", folder);
-
-      const response = await supabase.functions.invoke("cloudinary-upload", {
-        body: formData,
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message || "Upload failed");
-      }
-
-      const { url } = response.data;
+      const url = await uploadImageToCloudinary(file, folder);
       onChange(url);
       toast({ title: "Image uploaded successfully!" });
     } catch (error: any) {

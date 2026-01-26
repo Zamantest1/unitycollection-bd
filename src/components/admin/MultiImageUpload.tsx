@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { uploadImageToCloudinary } from "@/lib/cloudinaryUpload";
 import { Upload, X, Loader2, ImageIcon, GripVertical } from "lucide-react";
 
 interface MultiImageUploadProps {
@@ -66,19 +67,8 @@ export function MultiImageUpload({
       const uploadedUrls: string[] = [];
 
       for (const file of validFiles) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", folder);
-
-        const response = await supabase.functions.invoke("cloudinary-upload", {
-          body: formData,
-        });
-
-        if (response.error) {
-          throw new Error(response.error.message || "Upload failed");
-        }
-
-        uploadedUrls.push(response.data.url);
+        const url = await uploadImageToCloudinary(file, folder);
+        uploadedUrls.push(url);
       }
 
       onChange([...value, ...uploadedUrls]);
