@@ -85,7 +85,14 @@ export function HeroBanner() {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${currentBanner.image_url})` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-secondary/80 to-secondary/40" />
+            {/* Dynamic overlay based on overlay_type */}
+            <div className={`absolute inset-0 ${
+              (currentBanner as any).overlay_type === 'gold' 
+                ? 'bg-gradient-to-r from-gold/70 to-gold/30'
+                : (currentBanner as any).overlay_type === 'none'
+                ? 'bg-gradient-to-r from-black/50 to-black/20'
+                : 'bg-gradient-to-r from-secondary/80 to-secondary/40'
+            }`} />
           </div>
           
           <div className="relative h-full container mx-auto px-4 flex items-center">

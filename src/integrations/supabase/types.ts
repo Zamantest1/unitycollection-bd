@@ -22,6 +22,7 @@ export type Database = {
           image_url: string
           is_active: boolean | null
           link: string | null
+          overlay_type: string | null
           subtitle: string | null
           title: string | null
         }
@@ -32,6 +33,7 @@ export type Database = {
           image_url: string
           is_active?: boolean | null
           link?: string | null
+          overlay_type?: string | null
           subtitle?: string | null
           title?: string | null
         }
@@ -42,6 +44,7 @@ export type Database = {
           image_url?: string
           is_active?: boolean | null
           link?: string | null
+          overlay_type?: string | null
           subtitle?: string | null
           title?: string | null
         }

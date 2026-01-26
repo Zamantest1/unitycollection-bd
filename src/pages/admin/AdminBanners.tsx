@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ const AdminBanners = () => {
     link: "",
     is_active: true,
     display_order: 0,
+    overlay_type: "green" as "green" | "gold" | "none",
   });
 
   const { data: banners = [], isLoading } = useQuery({
@@ -76,7 +78,7 @@ const AdminBanners = () => {
   });
 
   const resetForm = () => {
-    setForm({ image_url: "", title: "", subtitle: "", link: "", is_active: true, display_order: 0 });
+    setForm({ image_url: "", title: "", subtitle: "", link: "", is_active: true, display_order: 0, overlay_type: "green" });
     setEditingId(null);
     setIsDialogOpen(false);
   };
@@ -89,6 +91,7 @@ const AdminBanners = () => {
       link: banner.link || "",
       is_active: banner.is_active,
       display_order: banner.display_order,
+      overlay_type: banner.overlay_type || "green",
     });
     setEditingId(banner.id);
     setIsDialogOpen(true);
@@ -157,6 +160,22 @@ const AdminBanners = () => {
                   value={form.display_order}
                   onChange={(e) => setForm({ ...form, display_order: parseInt(e.target.value) || 0 })}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Overlay Type</Label>
+                <Select 
+                  value={form.overlay_type} 
+                  onValueChange={(v: "green" | "gold" | "none") => setForm({ ...form, overlay_type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select overlay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="green">Green (Default)</SelectItem>
+                    <SelectItem value="gold">Gold</SelectItem>
+                    <SelectItem value="none">None (Dark)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
