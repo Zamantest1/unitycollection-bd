@@ -190,8 +190,8 @@ Deno.serve(async (req) => {
       page.drawText(itemText, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
       
       const itemTotal = (item.price * (item.quantity || 1));
-      page.drawText(`৳${itemTotal.toLocaleString()}`, { 
-        x: rightMargin - 60, y: yPos, size: 10, font: helvetica, color: textColor 
+      page.drawText(`Tk. ${itemTotal.toLocaleString()}`, { 
+        x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor 
       });
     }
 
@@ -207,13 +207,13 @@ Deno.serve(async (req) => {
     // Subtotal
     yPos -= 20;
     page.drawText("Subtotal:", { x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(`৳${order.subtotal.toLocaleString()}`, { x: rightMargin - 60, y: yPos, size: 10, font: helvetica, color: textColor });
+    page.drawText(`Tk. ${order.subtotal.toLocaleString()}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
 
     // Delivery
     const deliveryCharge = order.delivery_area === "dhaka" ? 60 : 120;
     yPos -= 18;
     page.drawText("Delivery:", { x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(`৳${deliveryCharge}`, { x: rightMargin - 60, y: yPos, size: 10, font: helvetica, color: textColor });
+    page.drawText(`Tk. ${deliveryCharge}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
 
     // Discount
     if (order.discount_amount && order.discount_amount > 0) {
@@ -221,15 +221,15 @@ Deno.serve(async (req) => {
       page.drawText(`Discount${order.coupon_code ? ` (${order.coupon_code})` : ""}:`, { 
         x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: primaryColor 
       });
-      page.drawText(`-৳${order.discount_amount.toLocaleString()}`, { 
-        x: rightMargin - 60, y: yPos, size: 10, font: helvetica, color: primaryColor 
+      page.drawText(`-Tk. ${order.discount_amount.toLocaleString()}`, { 
+        x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: primaryColor 
       });
     }
 
     // Total
     yPos -= 25;
     page.drawText("TOTAL:", { x: rightMargin - 150, y: yPos, size: 12, font: helveticaBold, color: textColor });
-    page.drawText(`৳${order.total.toLocaleString()}`, { x: rightMargin - 60, y: yPos, size: 12, font: helveticaBold, color: goldColor });
+    page.drawText(`Tk. ${order.total.toLocaleString()}`, { x: rightMargin - 70, y: yPos, size: 12, font: helveticaBold, color: goldColor });
 
     // Thank you message
     yPos -= 50;
