@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImageToStorage } from "@/lib/imageUpload";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, Link, Plus } from "lucide-react";
 
 interface MultiImageUploadProps {
   value: string[];
@@ -21,6 +22,7 @@ export function MultiImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -133,6 +135,49 @@ export function MultiImageUpload({
     onChange(newUrls);
   };
 
+  const handleAddUrl = () => {
+    const trimmedUrl = urlInput.trim();
+    if (!trimmedUrl) {
+      toast({
+        title: "Please enter a URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid image URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (value.length >= maxImages) {
+      toast({
+        title: "Too many images",
+        description: `Maximum ${maxImages} images allowed`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onChange([...value, trimmedUrl]);
+    setUrlInput("");
+    toast({ title: "Image URL added!" });
+  };
+
+  const handleUrlKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddUrl();
+    }
+  };
+
   return (
     <div className="space-y-3">
       <input
@@ -222,6 +267,30 @@ export function MultiImageUpload({
               </span>
             </>
           )}
+        </div>
+      )}
+
+      {/* URL input */}
+      {value.length < maxImages && (
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyPress={handleUrlKeyPress}
+              placeholder="Or paste image URL..."
+              className="pl-10"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAddUrl}
+            disabled={!urlInput.trim()}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>
