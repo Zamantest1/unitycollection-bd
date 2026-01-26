@@ -117,7 +117,7 @@ const AdminBanners = () => {
               Add Banner
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? "Edit Banner" : "Add Banner"}</DialogTitle>
             </DialogHeader>
