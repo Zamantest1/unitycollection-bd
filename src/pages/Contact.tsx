@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Phone, Mail, MapPin, MessageCircle, Clock, Facebook } from "lucide-react";
+import { Phone, Mail, MapPin, MessageCircle, Clock, Facebook, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const Contact = () => {
   const whatsappLink = "https://wa.me/8801880545357";
@@ -100,12 +100,15 @@ const Contact = () => {
                 <a href="https://www.facebook.com/UnityCollectionBd" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors" aria-label="Facebook">
                   <Facebook className="h-6 w-6 text-primary-foreground" />
                 </a>
+                <a href="https://www.instagram.com/unitycollectionbd" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-primary flex items-center justify-center hover:bg-gold transition-colors" aria-label="Instagram">
+                  <Instagram className="h-6 w-6 text-primary-foreground" />
+                </a>
               </div>
             </div>
 
             {/* Owner Info */}
             <div className="mt-8 text-center text-sm text-muted">
-              <p>Owner: <span className="text-foreground">Ibn E Habib</span></p>
+              <p>Owner: <a href="https://www.facebook.com/ibn.e.habib.528372" target="_blank" rel="noopener noreferrer" className="text-foreground font-semibold hover:text-gold transition-colors">Ibn E Habib</a></p>
             </div>
           </div>
         </div>
