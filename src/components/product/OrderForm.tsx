@@ -201,12 +201,12 @@ export function OrderForm({ product }: OrderFormProps) {
         `📍 *Address:* ${order.address}\n` +
         `🚚 *Delivery:* ${order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
         `🛒 *Product:*\n` +
-        `• ${product.name}${product.size ? ` (Size: ${product.size})` : ""} - ৳${product.price}\n\n` +
-        `💰 *Subtotal:* ৳${subtotal}\n` +
-        `🚚 *Delivery:* ৳${deliveryCharge}\n` +
-        (discount > 0 ? `🎟️ *Discount:* -৳${discount}\n` : "") +
+        `• ${product.name}${product.size ? ` (Size: ${product.size})` : ""} - Tk.${product.price}\n\n` +
+        `💰 *Subtotal:* Tk.${subtotal}\n` +
+        `🚚 *Delivery:* Tk.${deliveryCharge}\n` +
+        (discount > 0 ? `🎟️ *Discount:* -Tk.${discount}\n` : "") +
         (validatedReferral ? `👥 *Referral:* ${validatedReferral}\n` : "") +
-        `✅ *Total:* ৳${total}\n\n` +
+        `✅ *Total:* Tk.${total}\n\n` +
         `🔗 *Product Link:* ${window.location.href}`
       );
 
