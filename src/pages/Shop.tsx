@@ -1,13 +1,15 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { CategoryFilter } from "@/components/shop/CategoryFilter";
 import { SearchBar } from "@/components/shop/SearchBar";
+import { PullToRefresh } from "@/components/shop/PullToRefresh";
 
 const Shop = () => {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -27,6 +29,11 @@ const Shop = () => {
       return data;
     },
   });
+
+  // Handle refresh
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+  }, [queryClient]);
 
   // Filter products based on category and search
   const filteredProducts = useMemo(() => {
@@ -73,40 +80,42 @@ const Shop = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          {/* Search */}
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <PullToRefresh onRefresh={handleRefresh}>
+          <div className="container mx-auto px-4 py-8">
+            {/* Search */}
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
-          {/* Category Filter */}
-          <CategoryFilter
-            selectedCategory={selectedCategory}
-            onSelectCategory={handleCategoryChange}
-          />
+            {/* Category Filter */}
+            <CategoryFilter
+              selectedCategory={selectedCategory}
+              onSelectCategory={handleCategoryChange}
+            />
 
-          {/* Products Grid */}
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-muted text-lg">No products found</p>
-              {(selectedCategory || searchQuery) && (
-                <p className="text-muted text-sm mt-2">
-                  Try adjusting your filters or search query
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+            {/* Products Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-muted text-lg">No products found</p>
+                {(selectedCategory || searchQuery) && (
+                  <p className="text-muted text-sm mt-2">
+                    Try adjusting your filters or search query
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </PullToRefresh>
       </div>
     </Layout>
   );
