@@ -200,7 +200,7 @@ const AdminProducts = () => {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const lowStockCount = products.filter((p) => p.stock_quantity < 5).length;
+  const lowStockCount = products.filter((p) => p.stock_quantity === 1).length;
 
   return (
     <AdminLayout title="Products">
@@ -208,8 +208,8 @@ const AdminProducts = () => {
       {lowStockCount > 0 && (
         <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive" />
-          <span className="text-sm text-destructive font-medium">
-            {lowStockCount} product(s) have low stock (less than 5 items)
+         <span className="text-sm text-destructive font-medium animate-pulse">
+            ⚠️ {lowStockCount} product(s) have only 1 item left in stock - restock soon!
           </span>
         </div>
       )}
@@ -400,11 +400,11 @@ const AdminProducts = () => {
       ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProducts.map((product) => {
-            const isLowStock = product.stock_quantity < 5;
+            const isLowStock = product.stock_quantity === 1;
             const isOutOfStock = product.stock_quantity === 0;
             
             return (
-              <Card key={product.id} className={isOutOfStock ? "border-destructive/50" : isLowStock ? "border-yellow-500/50" : ""}>
+              <Card key={product.id} className={isOutOfStock ? "border-destructive/50" : isLowStock ? "border-destructive/40" : ""}>
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0 relative">
@@ -436,7 +436,7 @@ const AdminProducts = () => {
                         {isOutOfStock ? (
                           <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
                         ) : isLowStock ? (
-                          <Badge className="text-xs bg-yellow-500/20 text-yellow-700">Low Stock</Badge>
+                          <Badge className="text-xs bg-destructive/20 text-destructive animate-pulse">Only 1 Left!</Badge>
                         ) : null}
                       </div>
                     </div>
@@ -446,7 +446,7 @@ const AdminProducts = () => {
                   <div className="mt-3 pt-3 border-t border-border grid grid-cols-3 gap-2 text-center text-xs">
                     <div>
                       <p className="text-muted-foreground">Stock</p>
-                      <p className={`font-semibold ${isOutOfStock ? "text-destructive" : isLowStock ? "text-yellow-600" : "text-foreground"}`}>
+                      <p className={`font-semibold ${isOutOfStock ? "text-destructive" : isLowStock ? "text-destructive" : "text-foreground"}`}>
                         {product.stock_quantity}
                       </p>
                     </div>
