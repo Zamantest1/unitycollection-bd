@@ -77,7 +77,7 @@ const ProductDetail = () => {
   const sizes = product.sizes || [];
   const stockQuantity = product.stock_quantity || 0;
   const isOutOfStock = stockQuantity === 0;
-  const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
+  const isLastOne = stockQuantity === 1;
 
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -195,15 +195,15 @@ const ProductDetail = () => {
                     <span className="h-2 w-2 rounded-full bg-destructive" />
                     <span className="text-sm font-medium">Out of Stock</span>
                   </div>
-                ) : isLowStock ? (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 text-yellow-700 rounded-md">
-                    <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm font-medium">Only {stockQuantity} left in stock</span>
+              ) : isLastOne ? (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-md animate-pulse">
+                    <span className="h-2 w-2 rounded-full bg-destructive" />
+                    <span className="text-sm font-medium">Hurry! Only 1 left in stock</span>
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 text-green-700 rounded-md">
                     <span className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-sm font-medium">In Stock ({stockQuantity} available)</span>
+                    <span className="text-sm font-medium">In Stock</span>
                   </div>
                 )}
               </div>
