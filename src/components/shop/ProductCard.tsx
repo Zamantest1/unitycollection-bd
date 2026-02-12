@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageUrl = product.image_urls?.[0] || "/placeholder.svg";
   const stockQuantity = product.stock_quantity ?? 0;
   const isOutOfStock = stockQuantity === 0;
-  const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
+  
   const defaultSize = product.sizes?.[0] || "";
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -106,11 +106,8 @@ export function ProductCard({ product }: ProductCardProps) {
                 Sold Out
               </Badge>
             )}
-            {isLowStock && !isOutOfStock && (
-              <Badge className="bg-yellow-500/90 text-white">
-                Only {stockQuantity} left
-              </Badge>
-            )}
+
+
           </div>
 
           {/* Quick Add Button */}
