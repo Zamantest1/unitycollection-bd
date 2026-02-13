@@ -29,12 +29,22 @@ git clone <YOUR_GIT_URL>
 # Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install the necessary dependencies (npm only).
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Setup Supabase configuration
+# Copy the example environment file
+cp .env.example .env
+
+# Then edit .env and add your Supabase credentials:
+# VITE_SUPABASE_URL=your_url_here
+# VITE_SUPABASE_PUBLISHABLE_KEY=your_key_here
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
+
+**For detailed Supabase setup instructions, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)**
 
 **Edit a file directly in GitHub**
 
@@ -61,6 +71,22 @@ This project is built with:
 - Tailwind CSS
 
 ## How can I deploy this project?
+
+### Deploy to Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "New Project" and import your GitHub repository
+4. In the environment variables section, add:
+   - `VITE_SUPABASE_URL`: Your Supabase project URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase anon key
+5. Click Deploy
+
+**Important**: Never commit your `.env` file to GitHub. It's already in `.gitignore` for security.
+
+For more details, see [SUPABASE_SETUP.md - Vercel Deployment](./SUPABASE_SETUP.md#vercel-deployment-setup)
+
+### Deploy via Lovable
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
 
