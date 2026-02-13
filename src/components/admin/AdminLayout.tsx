@@ -1,25 +1,25 @@
 import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderOpen, 
-  Image, 
-  Tag, 
-  ShoppingCart, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Package,
+  FolderOpen,
+  Image,
+  Tag,
+  ShoppingCart,
+  Bell,
   LogOut,
   Menu,
   ChevronLeft,
   Users,
-  UserCheck
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { InstallPrompt } from "./InstallPrompt";
 
-const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
+const LOGO_URL =
+  "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -46,8 +46,10 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         navigate("/admin/login");
         return;
@@ -72,7 +74,9 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
       if (!session) {
         navigate("/admin/login");
       }
@@ -136,13 +140,16 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
           {/* Bottom Actions */}
           <div className="p-4 border-t border-sidebar-border space-y-2">
-            <InstallPrompt />
             <Link to="/" className="block">
-              <Button variant="ghost" className="w-full justify-start text-sidebar-foreground hover:text-gold">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sidebar-foreground hover:text-gold"
+              >
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 View Store
               </Button>
             </Link>
+
             <Button
               variant="ghost"
               onClick={handleLogout}
@@ -175,12 +182,18 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <h1 className="font-display text-xl font-bold text-foreground">{title}</h1>
+
+          <h1 className="font-display text-xl font-bold text-foreground">
+            {title}
+          </h1>
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
+8
