@@ -1,0 +1,32 @@
+============================================
+UNITY COLLECTION - ADMIN USER QUICK SETUP
+============================================
+
+ADMIN CREDENTIALS:
+- Email: unitycollectionbd@gmail.com
+- Password: unitycollectionbd2024
+
+SETUP STEPS:
+============
+
+1. Go to Supabase Dashboard
+   → Authentication → Users → Add user
+
+2. Create new user with:
+   Email: unitycollectionbd@gmail.com
+   Password: unitycollectionbd2024
+   ✓ Toggle "Auto Confirm user" ON
+
+3. Copy the User ID shown in the table
+
+4. Go to SQL Editor and run:
+   
+   INSERT INTO public.user_roles (user_id, role)
+   VALUES ('PASTE_USER_ID_HERE', 'admin')
+   ON CONFLICT (user_id, role) DO NOTHING;
+
+5. Test login at: /admin/login
+
+DONE! Admin user is ready.
+
+For detailed instructions, see: ADMIN_CREDENTIALS.md
