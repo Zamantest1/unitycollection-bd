@@ -196,4 +196,3 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
     </div>
   );
 }
-8
