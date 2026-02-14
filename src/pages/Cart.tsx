@@ -308,7 +308,7 @@ const Cart = () => {
             }
           }
         } catch (err) {
-          console.error("Auto-membership check error:", err);
+          // Silently ignore auto-membership check errors
         }
       }
 

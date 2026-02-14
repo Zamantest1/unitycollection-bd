@@ -33,8 +33,6 @@ Deno.serve(async (req) => {
 
     const { orderId } = await req.json();
 
-    console.log("generate-receipt: request", { orderId });
-
     if (!orderId) {
       return new Response(
         JSON.stringify({ error: "Order ID is required" }),
@@ -55,7 +53,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (error || !order) {
-      console.error("Order fetch error:", error);
       return new Response(
         JSON.stringify({ error: "Order not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -67,7 +64,6 @@ Deno.serve(async (req) => {
     try {
       items = (typeof order.items === "string" ? JSON.parse(order.items) : order.items) as OrderItem[];
     } catch (e) {
-      console.error("Items parse error:", e);
       items = [];
     }
 
@@ -307,7 +303,6 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error generating receipt:", error);
     return new Response(
       JSON.stringify({ error: "Failed to generate receipt" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
