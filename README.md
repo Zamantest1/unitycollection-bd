@@ -1,99 +1,44 @@
-# Welcome to your Lovable project
+# Unity Collection - E-Commerce Platform
 
-## Project info
+A modern, full-stack e-commerce platform with customer storefront, shopping cart, loyalty program, and admin dashboard.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Quick Start
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies (npm only).
+```bash
+# Install dependencies (npm only)
 npm install
 
-# Step 4: Setup Supabase configuration
-# Copy the example environment file
+# Setup environment variables
 cp .env.example .env
+# Edit .env with your Supabase credentials:
+# VITE_SUPABASE_URL=your_url
+# VITE_SUPABASE_PUBLISHABLE_KEY=your_key
 
-# Then edit .env and add your Supabase credentials:
-# VITE_SUPABASE_URL=your_url_here
-# VITE_SUPABASE_PUBLISHABLE_KEY=your_key_here
-
-# Step 5: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**For detailed Supabase setup instructions, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)**
+## Build & Deployment
 
-**Edit a file directly in GitHub**
+```bash
+# Production build
+npm run build
+# Output: dist/
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+# Deploy to Vercel
+# 1. Push to GitHub
+# 2. Connect on Vercel dashboard
+# 3. Add environment variables
+# 4. Deploy
+```
 
-**Use GitHub Codespaces**
+## Documentation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete backend logic, database schema, data flow, and system design
 
-## What technologies are used for this project?
+## Technologies
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-### Deploy to Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-3. Click "New Project" and import your GitHub repository
-4. In the environment variables section, add:
-   - `VITE_SUPABASE_URL`: Your Supabase project URL
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase anon key
-5. Click Deploy
-
-**Important**: Never commit your `.env` file to GitHub. It's already in `.gitignore` for security.
-
-For more details, see [SUPABASE_SETUP.md - Vercel Deployment](./SUPABASE_SETUP.md#vercel-deployment-setup)
-
-### Deploy via Lovable
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (PostgreSQL), Row Level Security
+- **State Management**: React Context, React Query
+- **UI Components**: Shadcn/ui, Radix UI, Framer Motion
