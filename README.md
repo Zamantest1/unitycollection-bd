@@ -1,73 +1,47 @@
-# Welcome to your Lovable project
+# Unity Collection - E-Commerce Platform
 
-## Project info
+A modern, full-stack e-commerce platform with customer storefront, shopping cart, loyalty program, and admin dashboard.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Quick Start
 
-## How can I edit this code?
+```bash
+# Install dependencies (npm only)
+npm install
 
-There are several ways of editing your application.
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials:
+# VITE_SUPABASE_URL=your_url
+# VITE_SUPABASE_PUBLISHABLE_KEY=your_key
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Build & Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Production build
+npm run build
+# Output: dist/
 
-**Use GitHub Codespaces**
+# Deploy to Vercel
+# 1. Push to GitHub
+# 2. Connect on Vercel dashboard
+# 3. Add environment variables
+# 4. Deploy
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Documentation
 
-## What technologies are used for this project?
+- **[BACKEND_CONNECTION_SUMMARY.md](./BACKEND_CONNECTION_SUMMARY.md)** - Quick overview of how all pages connect to backend
+- **[CONNECTION_MAP.md](./CONNECTION_MAP.md)** - Visual data flow and page-to-table connections
+- **[BACKEND_INTEGRATION.md](./BACKEND_INTEGRATION.md)** - Detailed integration patterns and data fetching
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete backend logic, database schema, and system design
 
-This project is built with:
+## Technologies
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (PostgreSQL), Row Level Security
+- **State Management**: React Context, React Query
+- **UI Components**: Shadcn/ui, Radix UI, Framer Motion

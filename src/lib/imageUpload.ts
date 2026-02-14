@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const MAX_DIMENSION = 1200;
 const QUALITY = 0.8;
