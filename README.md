@@ -34,7 +34,10 @@ npm run build
 
 ## Documentation
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete backend logic, database schema, data flow, and system design
+- **[BACKEND_CONNECTION_SUMMARY.md](./BACKEND_CONNECTION_SUMMARY.md)** - Quick overview of how all pages connect to backend
+- **[CONNECTION_MAP.md](./CONNECTION_MAP.md)** - Visual data flow and page-to-table connections
+- **[BACKEND_INTEGRATION.md](./BACKEND_INTEGRATION.md)** - Detailed integration patterns and data fetching
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete backend logic, database schema, and system design
 
 ## Technologies
 
