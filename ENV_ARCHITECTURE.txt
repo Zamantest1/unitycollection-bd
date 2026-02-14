@@ -1,0 +1,280 @@
+================================================================================
+ENVIRONMENT VARIABLES ARCHITECTURE
+================================================================================
+
+
+LOCAL DEVELOPMENT FLOW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         DEVELOPER MACHINE                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Copy Template                                               │
+│     └─ cp .env.local.example .env.local                         │
+│                                                                 │
+│  2. Add Supabase Credentials                                    │
+│     └─ nano .env.local                                          │
+│        VITE_SUPABASE_URL=https://...supabase.co                 │
+│        VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...         │
+│                                                                 │
+│  3. Run Verification (Automatic)                                │
+│     ├─ npm run dev  ──► verify-env.js ──► ✅ PASS               │
+│     └─ npm run build ──► verify-env.js ──► ✅ PASS              │
+│                                                                 │
+│  4. Development Server Starts                                   │
+│     ├─ Loads: import.meta.env.VITE_SUPABASE_URL                 │
+│     ├─ Loads: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY     │
+│     └─ src/integrations/supabase/client.ts initializes          │
+│                                                                 │
+│  5. Application Connects to Supabase                            │
+│     ├─ Authentication works                                     │
+│     ├─ Database queries work                                    │
+│     └─ File uploads work                                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+
+PRODUCTION DEPLOYMENT FLOW
+================================================================================
+
+┌──────────────────────┐
+│   GitHub Repository  │
+│                      │
+│  unitycollection-bd  │
+│  (v0 branch)         │
+│                      │
+│  .env (templates)    │  ← Never contains real credentials
+│  .env.local.example  │  ← Template for team
+│  src/**/*.ts         │  ← Application code
+│  verify-env.js       │  ← Verification script
+│                      │
+└──────────┬───────────┘
+           │
+           │ git push
+           │
+           ▼
+┌──────────────────────────────────────────┐
+│     Vercel Dashboard                     │
+│                                          │
+│  Settings > Environment Variables        │
+│  ┌──────────────────────────────────┐   │
+│  │ VITE_SUPABASE_URL                │   │
+│  │ Environments: Prod/Preview/Dev   │   │
+│  └──────────────────────────────────┘   │
+│  ┌──────────────────────────────────┐   │
+│  │ VITE_SUPABASE_PUBLISHABLE_KEY    │   │
+│  │ Environments: Prod/Preview/Dev   │   │
+│  └──────────────────────────────────┘   │
+└──────────────────────────────────────────┘
+           │
+           │ Deployment Triggered
+           │
+           ▼
+┌──────────────────────────────────────────┐
+│     Vercel Build Environment             │
+│                                          │
+│  1. npm run verify-env                   │
+│     ✅ Verifies env variables exist      │
+│                                          │
+│  2. npm run build                        │
+│     └─ Vite uses:                        │
+│        import.meta.env.VITE_SUPABASE_URL │
+│        import.meta.env.VITE_SUPABASE_... │
+│                                          │
+│  3. Build succeeds                       │
+│     └─ Artifacts created                 │
+│                                          │
+└──────────────────────────────────────────┘
+           │
+           │ Deployment Complete
+           │
+           ▼
+┌──────────────────────────────────────────┐
+│   Production Application (cdn)           │
+│   https://unitycollection-bd.vercel.app  │
+│                                          │
+│  ✅ Credentials loaded at runtime        │
+│  ✅ Supabase initialized                 │
+│  ✅ Application fully functional         │
+│                                          │
+└──────────────────────────────────────────┘
+
+
+ENVIRONMENT VARIABLE LIFECYCLE
+================================================================================
+
+┌─────────────────────┐
+│  Supabase Project   │
+│                     │
+│  Settings > API     │
+│  ├─ Project URL     │
+│  └─ Anon Key        │
+│                     │
+└────────┬────────────┘
+         │ Copy credentials
+         │
+         ▼
+┌─────────────────────────┐
+│  Local Development      │
+│                         │
+│  .env.local             │
+│  ├─ VITE_SUPABASE_URL   │
+│  ├─ VITE_SUPABASE_..KEY │
+│  └─ NOT committed to git│
+│                         │
+└────────┬────────────────┘
+         │ npm run dev
+         │ npm run build
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│  Application                            │
+│                                         │
+│  src/integrations/supabase/client.ts    │
+│  ├─ import.meta.env.VITE_SUPABASE_URL   │
+│  ├─ import.meta.env.VITE_SUPABASE_KEY   │
+│  └─ Creates supabase client             │
+│                                         │
+└────────┬────────────────────────────────┘
+         │
+         ├─────────────────┐
+         │                 │
+         ▼                 ▼
+    ┌────────┐        ┌──────────┐
+    │ Local  │        │ Vercel   │
+    │ Dev    │        │ Prod     │
+    └────────┘        └──────────┘
+
+
+SECURITY ARCHITECTURE
+================================================================================
+
+Before (❌ INSECURE):
+┌─────────────────────────────────┐
+│  Source Code Repository         │
+│                                 │
+│  .env (with credentials)  ❌    │ ← Exposed if leaked
+│  ├─ VITE_SUPABASE_URL=...      │
+│  └─ VITE_SUPABASE_KEY=...      │ ← VISIBLE IN GIT HISTORY
+│                                 │
+└─────────────────────────────────┘
+
+After (✅ SECURE):
+┌─────────────────────────────────┐
+│  Source Code Repository         │
+│                                 │
+│  .env (templates only)  ✅      │ ← No real credentials
+│  ├─ VITE_SUPABASE_URL=${...}   │
+│  └─ VITE_SUPABASE_KEY=${...}   │
+│                                 │
+│  .env.local (ignored)   ✅      │ ← Not committed to git
+│  ├─ In .gitignore              │
+│  └─ Local only                 │
+│                                 │
+│  .env.local.example     ✅      │ ← Safe example
+│  ├─ Contains placeholders      │
+│  └─ For team reference         │
+│                                 │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  Vercel Dashboard               │
+│                                 │
+│  Environment Variables  ✅      │ ← Encrypted at rest
+│  ├─ Access restricted to admins │
+│  ├─ Separate Prod/Preview/Dev   │
+│  └─ Not in source code          │
+│                                 │
+└─────────────────────────────────┘
+
+
+VERIFICATION SYSTEM
+================================================================================
+
+┌──────────────────────────────────────────┐
+│  npm run dev / npm run build              │
+└────────────┬─────────────────────────────┘
+             │
+             ▼
+┌──────────────────────────────────────────┐
+│  verify-env.js (Automatic)               │
+│                                          │
+│  Checks:                                 │
+│  ├─ Is .env.local file present?          │
+│  ├─ Is VITE_SUPABASE_URL set?            │
+│  └─ Is VITE_SUPABASE_PUBLISHABLE_KEY set?│
+│                                          │
+└────────────┬─────────────────────────────┘
+             │
+    ┌────────┴────────┐
+    │                 │
+    ▼                 ▼
+   ✅ PASS           ❌ FAIL
+    │                 │
+    │                 ├─ Show error message
+    │                 ├─ List missing variables
+    │                 ├─ Suggest setup steps
+    │                 └─ Exit with error code 1
+    │
+    └──► Continue with dev/build
+        └─ Application starts normally
+
+
+FILE DEPENDENCIES
+================================================================================
+
+Application Code:
+  src/
+  └─ integrations/supabase/client.ts
+     ├─ Imports: import.meta.env.VITE_SUPABASE_URL
+     ├─ Imports: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+     ├─ Validates: Both variables exist
+     ├─ Throws: Error if missing
+     └─ Creates: Supabase client if both present
+
+Build Process:
+  package.json
+  └─ scripts:
+     ├─ dev: "node verify-env.js && vite"
+     ├─ build: "node verify-env.js && vite build"
+     └─ verify-env: "node verify-env.js"
+
+Verification:
+  verify-env.js
+  └─ Checks: process.env.VITE_*
+     ├─ Reads: .env.local (if exists)
+     ├─ Reports: Missing variables
+     └─ Provides: Setup instructions
+
+
+DEPLOYMENT DECISION TREE
+================================================================================
+
+Start: "I want to set up my environment"
+│
+├─ "I'm developing locally"
+│  └─► Copy .env.local.example to .env.local
+│     └─► Add Supabase credentials
+│        └─► Run: npm run verify-env
+│           └─► Run: npm run dev
+│
+├─ "I'm deploying to Vercel"
+│  └─► Open: Vercel Dashboard
+│     └─► Settings > Environment Variables
+│        └─► Add: VITE_SUPABASE_URL
+│        └─► Add: VITE_SUPABASE_PUBLISHABLE_KEY
+│           └─► Select: All environments
+│              └─► Deploy: git push or vercel --prod
+│
+└─ "I'm troubleshooting"
+   └─► Run: npm run verify-env
+      └─► Check: .env.local exists
+         └─► Check: Vercel Dashboard variables
+            └─► Review: ENV_INTEGRATION_VERIFICATION.md
+
+
+================================================================================
+Environment variables properly secured with Vercel best practices
+================================================================================

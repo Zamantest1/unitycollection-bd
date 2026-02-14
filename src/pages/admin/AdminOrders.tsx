@@ -120,7 +120,6 @@ const AdminOrders = () => {
 
       toast({ title: "Receipt downloaded!" });
     } catch (error: any) {
-      console.error("Download error:", error);
       toast({ title: "Failed to download receipt", description: error.message, variant: "destructive" });
     }
   };
