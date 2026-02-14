@@ -81,7 +81,6 @@ export function MultiImageUpload({
       onChange([...value, ...uploadedUrls]);
       toast({ title: `${uploadedUrls.length} image(s) uploaded!` });
     } catch (error: any) {
-      console.error("Upload error:", error);
       toast({
         title: "Upload failed",
         description: error.message || "Failed to upload images",

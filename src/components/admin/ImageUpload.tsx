@@ -53,7 +53,6 @@ export function ImageUpload({ value, onChange, folder = "general", placeholder =
       onChange(url);
       toast({ title: "Image uploaded successfully!" });
     } catch (error: any) {
-      console.error("Upload error:", error);
       toast({
         title: "Upload failed",
         description: error.message || "Failed to upload image",

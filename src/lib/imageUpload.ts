@@ -101,7 +101,6 @@ export async function uploadImageToStorage(file: File, folder: string = ""): Pro
     });
 
   if (error) {
-    console.error("Storage upload error:", error);
     throw new Error(error.message || "Failed to upload image");
   }
 
@@ -129,7 +128,6 @@ export async function deleteImageFromStorage(url: string): Promise<void> {
     .remove([path]);
 
   if (error) {
-    console.error("Storage delete error:", error);
     // Don't throw - deletion failures shouldn't block operations
   }
 }
