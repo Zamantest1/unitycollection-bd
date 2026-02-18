@@ -16,7 +16,7 @@ const orderSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
   phone: z.string().min(11, "Phone number must be at least 11 digits").max(15),
   address: z.string().min(10, "Please provide a complete address").max(500),
-  deliveryArea: z.enum(["dhaka", "outside"]),
+  deliveryArea: z.enum(["rajshahi", "outside_rajshahi"]),
   couponCode: z.string().max(50).optional(),
   referralCode: z.string().max(50).optional(),
 });
@@ -54,12 +54,12 @@ export function OrderForm({ product }: OrderFormProps) {
   } = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      deliveryArea: "dhaka",
+      deliveryArea: "rajshahi",
     },
   });
 
   const deliveryArea = watch("deliveryArea");
-  const deliveryCharge = deliveryArea === "dhaka" ? 60 : 120;
+  const deliveryCharge = deliveryArea === "rajshahi" ? 60 : 120;
   const subtotal = product.price;
   const discount = appliedCoupon?.discount || 0;
   const total = subtotal + deliveryCharge - discount;
@@ -199,7 +199,7 @@ export function OrderForm({ product }: OrderFormProps) {
         `👤 *Name:* ${order.customer_name}\n` +
         `📞 *Phone:* ${order.phone}\n` +
         `📍 *Address:* ${order.address}\n` +
-        `🚚 *Delivery:* ${order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
+        `🚚 *Delivery:* ${order.delivery_area === "rajshahi" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
         `🛒 *Product:*\n` +
         `• ${product.name}${product.size ? ` (Size: ${product.size})` : ""} - Tk.${product.price}\n\n` +
         `💰 *Subtotal:* Tk.${subtotal}\n` +
@@ -324,14 +324,14 @@ export function OrderForm({ product }: OrderFormProps) {
           }
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="dhaka" id="dhaka" />
-            <Label htmlFor="dhaka" className="font-normal cursor-pointer">
+            <RadioGroupItem value="rajshahi" id="rajshahi" />
+            <Label htmlFor="rajshahi" className="font-normal cursor-pointer">
               Inside Rajshahi (৳60)
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="outside" id="outside" />
-            <Label htmlFor="outside" className="font-normal cursor-pointer">
+            <RadioGroupItem value="outside_rajshahi" id="outside_rajshahi" />
+            <Label htmlFor="outside_rajshahi" className="font-normal cursor-pointer">
               Outside Rajshahi (৳120)
             </Label>
           </div>
