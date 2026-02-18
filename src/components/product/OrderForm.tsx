@@ -30,6 +30,7 @@ interface OrderFormProps {
     price: number;
     size?: string;
     stockQuantity?: number;
+    productCode?: string;
   };
 }
 
@@ -175,6 +176,7 @@ export function OrderForm({ product }: OrderFormProps) {
             price: product.price,
             size: product.size,
             quantity: 1,
+            product_code: product.productCode || null,
           },
         ],
         subtotal,

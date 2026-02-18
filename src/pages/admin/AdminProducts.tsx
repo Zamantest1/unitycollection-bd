@@ -102,7 +102,7 @@ const AdminProducts = () => {
       } else {
         const { error } = await supabase
           .from("products")
-          .insert(productData);
+          .insert(productData as any);
         if (error) throw error;
       }
     },
@@ -196,9 +196,10 @@ const AdminProducts = () => {
     saveMutation.mutate(form);
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    return p.name.toLowerCase().includes(q) || (p.product_code as string)?.toLowerCase().includes(q);
+  });
 
   const lowStockCount = products.filter((p) => p.stock_quantity === 1).length;
 
@@ -238,6 +239,12 @@ const AdminProducts = () => {
               <DialogTitle>{editingId ? "Edit Product" : "Add Product"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {editingId && (
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-xs text-muted-foreground">Product Code</p>
+                  <p className="font-mono font-semibold text-foreground">{products.find(p => p.id === editingId)?.product_code as string}</p>
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Name *</Label>
@@ -420,7 +427,10 @@ const AdminProducts = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
+                        <Badge variant="outline" className="text-xs font-mono shrink-0">{(product as any).product_code}</Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground truncate">{product.categories?.name || "Uncategorized"}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-gold font-bold">

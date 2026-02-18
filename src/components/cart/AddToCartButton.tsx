@@ -13,6 +13,7 @@ interface AddToCartButtonProps {
     originalPrice: number;
     imageUrl: string;
     stockQuantity: number;
+    productCode?: string;
   };
   selectedSize?: string;
   requiresSize?: boolean;
@@ -66,6 +67,7 @@ export function AddToCartButton({
         imageUrl: product.imageUrl,
         quantity: 1,
         stockQuantity: product.stockQuantity,
+        productCode: product.productCode,
       });
 
       setIsAdding(false);
