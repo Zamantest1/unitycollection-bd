@@ -1,30 +1,52 @@
 
 
-## Admin Low Stock Warning for Last Item
+## Fix: Delivery Area Display + Receipt Download
 
-### What will change
+### Issue 1: Delivery Area Shows "Dhaka" Instead of "Rajshahi"
 
-In the admin Products page (`src/pages/admin/AdminProducts.tsx`), update the warning system to specifically highlight products with exactly 1 unit left:
+**Root Cause:** The order form stores `"dhaka"` and `"outside"` as raw values in the database (from the Zod enum on line 19 of OrderForm.tsx). The WhatsApp message correctly translates these to "Inside Rajshahi" / "Outside Rajshahi", but the admin order detail modal on line 295 of AdminOrders.tsx just does `capitalize` on the raw value -- so it shows "Dhaka" and "Outside".
 
-**1. Top Alert Banner (line 203-215)**
-- Change the count from "stock < 5" to "stock === 1"
-- Update message to something like: "X product(s) have only 1 item left in stock - restock soon!"
-- Use a more urgent pulsing style to grab attention
+**Fix (2 options, recommending Option A):**
 
-**2. Product Card Badges (lines 403, 407, 436-440)**
-- Keep "Out of Stock" badge (stock = 0) as-is
-- Change "Low Stock" badge (was < 5) to only show when stock === 1
-- Update badge text from "Low Stock" to "Last One!" with a more urgent red/orange style
-- Update card border highlight to only apply when stock === 1
+**Option A - Update stored values to match reality:**
+- Change the Zod enum from `["dhaka", "outside"]` to `["rajshahi", "outside_rajshahi"]`
+- Update radio button values accordingly
+- Update the WhatsApp message mapping
+- Update the receipt edge function mapping
+- Update admin display to show human-readable labels
 
-**3. Stock Number Color (line 449)**
-- Update the yellow color threshold from < 5 to === 1 so the stock count shows in warning color only for the last item
+**Option B (simpler) - Just fix the display in admin:**
+- Add a helper function in AdminOrders.tsx that maps `"dhaka"` to `"Inside Rajshahi"` and `"outside"` to `"Outside Rajshahi"`
+- Apply the same mapping in the receipt edge function (already done there on line 176)
 
-### Technical Details
+I recommend **Option A** since storing "dhaka" when you mean "rajshahi" is confusing and will cause issues long-term. However, existing orders in the database will still have the old values, so the display helper will handle both old and new values.
 
-All changes are in `src/pages/admin/AdminProducts.tsx`:
-- `lowStockCount` filter: change `p.stock_quantity < 5` to `p.stock_quantity === 1`
-- `isLowStock` variable: change `product.stock_quantity < 5` to `product.stock_quantity === 1`
-- Badge text: "Low Stock" becomes "Last One!" or "Only 1 Left"
-- Alert text updated to reflect the single-item urgency
+**Changes:**
+- `src/components/product/OrderForm.tsx`: Change enum values from `"dhaka"/"outside"` to `"rajshahi"/"outside_rajshahi"`, update default value, radio values, delivery charge logic, and WhatsApp message
+- `src/pages/admin/AdminOrders.tsx`: Add a `getDeliveryLabel()` helper that maps all values (old + new) to proper labels like "Inside Rajshahi" / "Outside Rajshahi". Use it in the order detail modal.
+- `supabase/functions/generate-receipt/index.ts`: Update the delivery area check to handle both old and new values
+
+---
+
+### Issue 2: Receipt Download Fails with Bengali Character Error
+
+**Root Cause:** The edge function logs show: `WinAnsi cannot encode "অ"`. The product names contain Bengali text (e.g., "মিডনাইট স্ট্রাইপ ক্লাসিক পাঞ্জাবি"), and `pdf-lib`'s standard fonts (Helvetica) only support WinAnsi (Latin) characters. Bengali characters crash the PDF generation.
+
+**Fix:** Strip non-Latin characters from text before rendering in the PDF, or replace them with transliterated/simplified versions. Since product names have both English and Bengali parts (e.g., "Midnight Stripe Classic | মিডনাইট স্ট্রাইপ ক্লাসিক পাঞ্জাবি"), we can extract just the English portion before the `|` separator.
+
+**Changes in `supabase/functions/generate-receipt/index.ts`:**
+- Add a helper function `sanitizeText()` that removes non-ASCII characters and cleans up the text
+- For product names specifically, extract the English part before `|` if present
+- Apply `sanitizeText()` to customer name, address, and all text fields that might contain Bengali
+- This ensures the PDF generates successfully while keeping the receipt readable
+
+---
+
+### Technical Summary
+
+| File | Change |
+|------|--------|
+| `src/components/product/OrderForm.tsx` | Update enum values from "dhaka"/"outside" to "rajshahi"/"outside_rajshahi" |
+| `src/pages/admin/AdminOrders.tsx` | Add delivery area label mapping function, apply to order detail view |
+| `supabase/functions/generate-receipt/index.ts` | Add text sanitization to strip Bengali characters, handle both old/new delivery area values |
 
