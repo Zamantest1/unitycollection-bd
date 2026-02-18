@@ -17,6 +17,21 @@ interface OrderItem {
   quantity: number;
 }
 
+// Strip non-ASCII characters for PDF compatibility (pdf-lib only supports WinAnsi/Latin)
+function sanitizeText(text: string): string {
+  if (!text) return "";
+  // Remove non-ASCII characters and clean up extra spaces
+  return text.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, " ").trim();
+}
+
+// For product names with "English | Bengali" format, extract just the English part
+function sanitizeProductName(name: string): string {
+  if (!name) return "";
+  const parts = name.split("|");
+  const englishPart = parts[0].trim();
+  return sanitizeText(englishPart) || sanitizeText(name) || "Product";
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -159,21 +174,22 @@ Deno.serve(async (req) => {
     page.drawText("BILL TO", { x: leftMargin, y: yPos, size: 10, font: helveticaBold, color: primaryColor });
 
     yPos -= 18;
-    page.drawText(order.customer_name, { x: leftMargin, y: yPos, size: 11, font: helveticaBold, color: textColor });
+    page.drawText(sanitizeText(order.customer_name), { x: leftMargin, y: yPos, size: 11, font: helveticaBold, color: textColor });
 
     yPos -= 15;
     page.drawText(order.phone, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
 
     yPos -= 15;
     // Wrap address if too long
-    const addressLines = wrapText(order.address, 70);
+    const addressLines = wrapText(sanitizeText(order.address), 70);
     for (const line of addressLines) {
       page.drawText(line, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
       yPos -= 15;
     }
 
     yPos -= 5;
-    page.drawText(`Delivery: ${order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"}`, { 
+    const deliveryLabel = (order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? "Inside Rajshahi" : "Outside Rajshahi";
+    page.drawText(`Delivery: ${deliveryLabel}`, { 
       x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor 
     });
 
@@ -202,7 +218,8 @@ Deno.serve(async (req) => {
     // Items
     for (const item of items) {
       yPos -= 20;
-      const itemText = `${item.name}${item.size ? ` (Size: ${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`;
+      const itemName = sanitizeProductName(item.name);
+      const itemText = `${itemName}${item.size ? ` (Size: ${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`;
       page.drawText(itemText, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
       
       const itemTotal = (item.price * (item.quantity || 1));
@@ -226,7 +243,7 @@ Deno.serve(async (req) => {
     page.drawText(`Tk. ${order.subtotal.toLocaleString()}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
 
     // Delivery
-    const deliveryCharge = order.delivery_area === "dhaka" ? 60 : 120;
+    const deliveryCharge = (order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? 60 : 120;
     yPos -= 18;
     page.drawText("Delivery:", { x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: mutedColor });
     page.drawText(`Tk. ${deliveryCharge}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });

@@ -18,6 +18,19 @@ import { Badge } from "@/components/ui/badge";
 const filterStatusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
 const updateStatusOptions = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
+const getDeliveryLabel = (area: string) => {
+  switch (area) {
+    case "dhaka":
+    case "rajshahi":
+      return "Inside Rajshahi";
+    case "outside":
+    case "outside_rajshahi":
+      return "Outside Rajshahi";
+    default:
+      return area;
+  }
+};
+
 const AdminOrders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -292,7 +305,7 @@ const AdminOrders = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Delivery Area</p>
-                  <p className="font-medium capitalize">{selectedOrder.delivery_area}</p>
+                  <p className="font-medium">{getDeliveryLabel(selectedOrder.delivery_area)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Status</p>
