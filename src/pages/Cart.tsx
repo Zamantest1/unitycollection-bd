@@ -241,6 +241,7 @@ const Cart = () => {
           price: item.price,
           size: item.size,
           quantity: item.quantity,
+          product_code: item.productCode || null,
         })),
         subtotal,
         discount_amount: totalDiscount,

@@ -327,6 +327,7 @@ const AdminOrders = () => {
                   <div key={index} className="flex justify-between text-sm py-1">
                     <span>
                       {item.name}
+                      {item.product_code && <span className="text-muted-foreground font-mono text-xs ml-1">({item.product_code})</span>}
                       {item.size && ` (${item.size})`}
                       {item.quantity && item.quantity > 1 && ` × ${item.quantity}`}
                     </span>

@@ -17,6 +17,7 @@ interface Product {
   categories?: { name: string } | null;
   stock_quantity?: number;
   sizes?: string[] | null;
+  product_code?: string;
 }
 
 interface ProductCardProps {
@@ -56,6 +57,7 @@ export function ProductCard({ product }: ProductCardProps) {
       imageUrl,
       quantity: 1,
       stockQuantity,
+      productCode: product.product_code,
     });
 
     setIsAdded(true);
@@ -140,9 +142,12 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="p-3 md:p-4">
           {/* Category */}
           {product.categories?.name && (
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">
               {product.categories.name}
             </p>
+          )}
+          {product.product_code && (
+            <p className="text-[10px] text-muted-foreground/70 font-mono mb-1">{product.product_code}</p>
           )}
 
           {/* Name */}

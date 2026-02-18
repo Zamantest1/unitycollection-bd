@@ -172,9 +172,12 @@ const ProductDetail = () => {
               )}
 
               {/* Name */}
-              <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                 {product.name}
               </h1>
+              {(product as any).product_code && (
+                <p className="text-xs text-muted-foreground mb-4 font-mono">Product Code: {(product as any).product_code}</p>
+              )}
 
               {/* Price */}
               <div className="flex items-center gap-3 mb-4">
@@ -262,6 +265,7 @@ const ProductDetail = () => {
                       originalPrice: product.price,
                       imageUrl: images[0],
                       stockQuantity,
+                      productCode: (product as any).product_code,
                     }}
                     selectedSize={selectedSize || undefined}
                     requiresSize={sizes.length > 0}
@@ -288,6 +292,7 @@ const ProductDetail = () => {
                       price: displayPrice!,
                       size: selectedSize || undefined,
                       stockQuantity,
+                      productCode: (product as any).product_code,
                     }}
                   />
                 </div>
