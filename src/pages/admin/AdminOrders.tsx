@@ -150,6 +150,63 @@ const AdminOrders = () => {
     return matchesSearch && matchesStatus && matchesReferral;
   });
 
+  const downloadCustomerCSV = () => {
+    if (filteredOrders.length === 0) {
+      toast({ title: "No orders to export", variant: "destructive" });
+      return;
+    }
+
+    const customerMap = new Map<string, { name: string; phone: string; address: string; delivery_area: string; order_count: number; total_spent: number; last_order: string }>();
+
+    filteredOrders.forEach((order) => {
+      const existing = customerMap.get(order.phone);
+      if (existing) {
+        existing.order_count += 1;
+        existing.total_spent += Number(order.total);
+        if (new Date(order.created_at) > new Date(existing.last_order)) {
+          existing.last_order = order.created_at;
+          existing.name = order.customer_name;
+          existing.address = order.address;
+          existing.delivery_area = order.delivery_area;
+        }
+      } else {
+        customerMap.set(order.phone, {
+          name: order.customer_name,
+          phone: order.phone,
+          address: order.address,
+          delivery_area: order.delivery_area,
+          order_count: 1,
+          total_spent: Number(order.total),
+          last_order: order.created_at,
+        });
+      }
+    });
+
+    const headers = ["Customer Name", "Phone", "Address", "Delivery Area", "Order Count", "Total Spent", "Last Order Date"];
+    const rows = Array.from(customerMap.values()).map((c) => [
+      `"${c.name.replace(/"/g, '""')}"`,
+      c.phone,
+      `"${c.address.replace(/"/g, '""')}"`,
+      getDeliveryLabel(c.delivery_area),
+      c.order_count,
+      c.total_spent,
+      new Date(c.last_order).toLocaleDateString(),
+    ]);
+
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({ title: `Downloaded ${customerMap.size} unique customers!` });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -204,6 +261,10 @@ const AdminOrders = () => {
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={downloadCustomerCSV} className="w-full md:w-auto">
+          <Download className="h-4 w-4 mr-2" />
+          Download Customers
+        </Button>
       </div>
 
       {/* Orders List */}
