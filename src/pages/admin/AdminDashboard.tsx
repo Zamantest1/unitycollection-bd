@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, ShoppingCart, Tag, FolderOpen } from "lucide-react";
+import { Package, ShoppingCart, Tag, FolderOpen, DollarSign, TrendingUp, Warehouse, Percent } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -21,6 +21,26 @@ const AdminDashboard = () => {
         orders: orders.count || 0,
         categories: categories.count || 0,
         coupons: coupons.count || 0,
+      };
+    },
+  });
+
+  const { data: businessStats } = useQuery({
+    queryKey: ["admin-business-stats"],
+    queryFn: async () => {
+      const [productsData, ordersData] = await Promise.all([
+        supabase.from("products").select("stock_quantity, sold_count"),
+        supabase.from("orders").select("total, discount_amount, status"),
+      ]);
+
+      const products = productsData.data || [];
+      const orders = ordersData.data || [];
+
+      return {
+        totalRevenue: orders.filter(o => o.status === "delivered").reduce((sum, o) => sum + Number(o.total), 0),
+        itemsSold: products.reduce((sum, p) => sum + (p.sold_count || 0), 0),
+        totalStock: products.reduce((sum, p) => sum + (p.stock_quantity || 0), 0),
+        discountsGiven: orders.reduce((sum, o) => sum + Number(o.discount_amount || 0), 0),
       };
     },
   });
@@ -46,6 +66,13 @@ const AdminDashboard = () => {
     { title: "Coupons", value: stats?.coupons || 0, icon: Tag, link: "/admin/coupons", color: "text-gold" },
   ];
 
+  const businessCards = [
+    { title: "Total Revenue", value: `৳${businessStats?.totalRevenue || 0}`, icon: DollarSign, color: "text-green-600" },
+    { title: "Items Sold", value: businessStats?.itemsSold || 0, icon: TrendingUp, color: "text-blue-600" },
+    { title: "Total Stock", value: businessStats?.totalStock || 0, icon: Warehouse, color: "text-purple-600" },
+    { title: "Discounts Given", value: `৳${businessStats?.discountsGiven || 0}`, icon: Percent, color: "text-orange-600" },
+  ];
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
@@ -60,7 +87,7 @@ const AdminDashboard = () => {
   return (
     <AdminLayout title="Dashboard">
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {statCards.map((stat) => (
           <Link key={stat.title} to={stat.link}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -75,6 +102,23 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </Link>
+        ))}
+      </div>
+
+      {/* Business Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {businessCards.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 

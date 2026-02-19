@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Trash2, RotateCcw, Loader2, Download } from "lucide-react";
+import { Search, Eye, Trash2, RotateCcw, Loader2, Download, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 // NOTE:
@@ -40,6 +41,10 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [deleteOrder, setDeleteOrder] = useState<any>(null);
   const [returnOrder, setReturnOrder] = useState<any>(null);
+  const [editOrder, setEditOrder] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>(null);
+  const [editItems, setEditItems] = useState<any[]>([]);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
@@ -100,6 +105,83 @@ const AdminOrders = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  // Edit order mutation
+  const editOrderMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      const { error } = await supabase.from("orders").update(updates).eq("id", editOrder.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "Order updated successfully!" });
+      setEditOrder(null);
+      setEditForm(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Open edit modal
+  const openEditModal = (order: any) => {
+    const items = parseItems(order.items);
+    setEditOrder(order);
+    setEditForm({
+      customer_name: order.customer_name,
+      phone: order.phone,
+      address: order.address,
+      delivery_area: order.delivery_area,
+      coupon_code: order.coupon_code || "",
+    });
+    setEditItems(items.map((item: any) => ({ ...item, quantity: item.quantity || 1 })));
+  };
+
+  // Recalculate totals
+  const recalcEditTotals = async (items: any[], couponCode: string) => {
+    const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.price) * Number(item.quantity || 1)), 0);
+    let discountAmount = 0;
+
+    if (couponCode.trim()) {
+      setCouponLoading(true);
+      const { data: coupon } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode.trim())
+        .eq("is_active", true)
+        .maybeSingle();
+      setCouponLoading(false);
+
+      if (coupon) {
+        if (coupon.discount_type === "percentage") {
+          discountAmount = Math.round(subtotal * coupon.discount_value / 100);
+        } else {
+          discountAmount = coupon.discount_value;
+        }
+      }
+    }
+
+    return { subtotal, discount_amount: discountAmount, total: subtotal - discountAmount };
+  };
+
+  const handleEditSave = async () => {
+    if (!editForm || !editOrder) return;
+    const validItems = editItems.filter((item) => item.quantity > 0);
+    if (validItems.length === 0) {
+      toast({ title: "Order must have at least one item", variant: "destructive" });
+      return;
+    }
+    const totals = await recalcEditTotals(validItems, editForm.coupon_code);
+    editOrderMutation.mutate({
+      customer_name: editForm.customer_name,
+      phone: editForm.phone,
+      address: editForm.address,
+      delivery_area: editForm.delivery_area,
+      coupon_code: editForm.coupon_code || null,
+      items: validItems,
+      ...totals,
+    });
+  };
 
   // Download receipt
   const downloadReceipt = async (orderId: string, orderCode: string) => {
@@ -323,6 +405,9 @@ const AdminOrders = () => {
                     <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
                       <Eye className="h-4 w-4" />
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => openEditModal(order)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     {order.status !== "returned" && order.status !== "cancelled" && (
                       <Button size="sm" variant="outline" onClick={() => setReturnOrder(order)}>
                         <RotateCcw className="h-4 w-4" />
@@ -425,6 +510,82 @@ const AdminOrders = () => {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Receipt
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Order Modal */}
+      <Dialog open={!!editOrder} onOpenChange={(open) => { if (!open) { setEditOrder(null); setEditForm(null); } }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Order {editOrder?.order_id}</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Customer Name</Label>
+                  <Input value={editForm.customer_name} onChange={(e) => setEditForm({ ...editForm, customer_name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address</Label>
+                  <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Delivery Area</Label>
+                  <Select value={editForm.delivery_area} onValueChange={(v) => setEditForm({ ...editForm, delivery_area: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rajshahi">Inside Rajshahi</SelectItem>
+                      <SelectItem value="outside_rajshahi">Outside Rajshahi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Coupon Code</Label>
+                  <div className="relative">
+                    <Input value={editForm.coupon_code} onChange={(e) => setEditForm({ ...editForm, coupon_code: e.target.value })} placeholder="Enter coupon" />
+                    {couponLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <Label className="mb-2 block">Items</Label>
+                {editItems.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
+                    <span className="flex-1 text-sm truncate">{item.name} {item.size ? `(${item.size})` : ""}</span>
+                    <span className="text-sm text-muted-foreground">৳{item.price}</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const updated = [...editItems];
+                        updated[index] = { ...updated[index], quantity: parseInt(e.target.value) || 0 };
+                        setEditItems(updated);
+                      }}
+                      className="w-16 text-center"
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => setEditItems(editItems.filter((_, i) => i !== index))}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => { setEditOrder(null); setEditForm(null); }}>Cancel</Button>
+                <Button onClick={handleEditSave} disabled={editOrderMutation.isPending}>
+                  {editOrderMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Save Changes
                 </Button>
               </div>
             </div>
