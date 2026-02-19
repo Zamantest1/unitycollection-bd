@@ -1,44 +1,29 @@
 
 
-## Add Product Code System
+## Bulk Download Customer Details for SMS
 
-Add an auto-generated product code (e.g., `UC-P0001`) to every product for easy identification by both admin and customers.
+Add a "Download Customer Details" button to the Admin Orders page that exports a CSV file containing customer information from filtered orders. This will help you collect customer phone numbers and details for SMS campaigns.
 
 ### What You'll Get
 
-- Every product gets a unique code like `UC-P0001`, `UC-P0002`, etc.
-- Codes are auto-generated when a product is created (no manual input needed)
-- Existing products will get codes assigned based on creation order
-- Customers can see the code on the product detail page (below the product name)
-- Product cards in the shop also show the code subtly
-- Admin can search products by code
-- Admin product cards display the code prominently
-- Order details in admin show product codes next to item names
+- A new "Download Customers" button in the orders page toolbar (next to the search/filter bar)
+- Exports a CSV file with columns: Customer Name, Phone, Address, Delivery Area, Order Count, Total Spent, Last Order Date
+- The export respects your current filters (status, search, referral) so you can download specific segments (e.g., only "delivered" customers)
+- Automatically de-duplicates customers by phone number so each customer appears only once, even if they have multiple orders
+- Aggregates order count and total spent per customer for better insights
 
-### Where the Code Appears
+### How It Works
 
-**Customer Side:**
-- Product detail page: shown as a small muted label like "Product Code: UC-P0001" under the product name
-- Product cards (shop grid): shown as a tiny label under the category name
-
-**Admin Side:**
-- Product cards: shown next to the product name
-- Search bar: filters by both name and product code
-- Product edit form: read-only display of the auto-generated code
-- Order detail modal: product code shown next to each item name
+1. You apply any filters you want (e.g., filter by "delivered" status to get confirmed buyers)
+2. Click the "Download Customers" button
+3. A CSV file downloads with all unique customers from the filtered orders
+4. Open the CSV in Excel or Google Sheets and use the phone numbers for SMS
 
 ### Technical Details
 
-| Change | Details |
-|--------|---------|
-| Database migration | Add `product_code` column (unique, not null with default), create `generate_product_code()` trigger function, backfill existing products sequentially by creation date |
-| `src/pages/admin/AdminProducts.tsx` | Show product code on cards (line 423 area), include `product_code` in search filter (line 199-201), show read-only code in edit form |
-| `src/pages/ProductDetail.tsx` | Display product code below product name (after line 177) |
-| `src/components/shop/ProductCard.tsx` | Show product code as small text under category name |
-| `src/pages/admin/AdminOrders.tsx` | Show product code next to item names in order detail modal |
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminOrders.tsx` | Add a `downloadCustomerCSV()` function that processes `filteredOrders`, de-duplicates by phone number, aggregates stats, and triggers a CSV file download. Add a "Download Customers" button to the toolbar area. |
 
-**Database trigger logic:**
-- On INSERT into products, auto-generate `UC-P` + zero-padded sequential number
-- Find the current max number from existing codes and increment by 1
-- Backfill migration assigns codes to all existing products ordered by `created_at`
+No database changes needed -- all data already exists in the orders table.
 
