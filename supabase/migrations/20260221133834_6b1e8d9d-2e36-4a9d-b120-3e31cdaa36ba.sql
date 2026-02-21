@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN custom_discount numeric DEFAULT 0;

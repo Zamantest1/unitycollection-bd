@@ -133,14 +133,15 @@ const AdminOrders = () => {
       address: order.address,
       delivery_area: order.delivery_area,
       coupon_code: order.coupon_code || "",
+      custom_discount: order.custom_discount || 0,
     });
     setEditItems(items.map((item: any) => ({ ...item, quantity: item.quantity || 1 })));
   };
 
   // Recalculate totals
-  const recalcEditTotals = async (items: any[], couponCode: string) => {
+  const recalcEditTotals = async (items: any[], couponCode: string, customDiscount: number = 0) => {
     const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.price) * Number(item.quantity || 1)), 0);
-    let discountAmount = 0;
+    let couponDiscount = 0;
 
     if (couponCode.trim()) {
       setCouponLoading(true);
@@ -154,14 +155,15 @@ const AdminOrders = () => {
 
       if (coupon) {
         if (coupon.discount_type === "percentage") {
-          discountAmount = Math.round(subtotal * coupon.discount_value / 100);
+          couponDiscount = Math.round(subtotal * coupon.discount_value / 100);
         } else {
-          discountAmount = coupon.discount_value;
+          couponDiscount = coupon.discount_value;
         }
       }
     }
 
-    return { subtotal, discount_amount: discountAmount, total: subtotal - discountAmount };
+    const totalDiscount = couponDiscount + Number(customDiscount || 0);
+    return { subtotal, discount_amount: totalDiscount, custom_discount: Number(customDiscount || 0), total: Math.max(subtotal - totalDiscount, 0) };
   };
 
   const handleEditSave = async () => {
@@ -171,15 +173,18 @@ const AdminOrders = () => {
       toast({ title: "Order must have at least one item", variant: "destructive" });
       return;
     }
-    const totals = await recalcEditTotals(validItems, editForm.coupon_code);
+    const totals = await recalcEditTotals(validItems, editForm.coupon_code, editForm.custom_discount);
     editOrderMutation.mutate({
       customer_name: editForm.customer_name,
       phone: editForm.phone,
       address: editForm.address,
       delivery_area: editForm.delivery_area,
       coupon_code: editForm.coupon_code || null,
+      custom_discount: totals.custom_discount,
       items: validItems,
-      ...totals,
+      subtotal: totals.subtotal,
+      discount_amount: totals.discount_amount,
+      total: totals.total,
     });
   };
 
@@ -554,6 +559,16 @@ const AdminOrders = () => {
                     <Input value={editForm.coupon_code} onChange={(e) => setEditForm({ ...editForm, coupon_code: e.target.value })} placeholder="Enter coupon" />
                     {couponLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
                   </div>
+                </div>
+                <div>
+                  <Label>Custom Discount (৳)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editForm.custom_discount}
+                    onChange={(e) => setEditForm({ ...editForm, custom_discount: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                  />
                 </div>
               </div>
 

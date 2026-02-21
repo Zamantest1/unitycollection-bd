@@ -184,6 +184,7 @@ export type Database = {
           address: string
           coupon_code: string | null
           created_at: string
+          custom_discount: number | null
           customer_name: string
           delivery_area: string
           discount_amount: number | null
@@ -202,6 +203,7 @@ export type Database = {
           address: string
           coupon_code?: string | null
           created_at?: string
+          custom_discount?: number | null
           customer_name: string
           delivery_area: string
           discount_amount?: number | null
@@ -220,6 +222,7 @@ export type Database = {
           address?: string
           coupon_code?: string | null
           created_at?: string
+          custom_discount?: number | null
           customer_name?: string
           delivery_area?: string
           discount_amount?: number | null
