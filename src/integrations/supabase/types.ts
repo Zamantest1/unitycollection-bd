@@ -187,6 +187,7 @@ export type Database = {
           custom_discount: number | null
           customer_name: string
           delivery_area: string
+          delivery_charge: number | null
           discount_amount: number | null
           id: string
           items: Json
@@ -206,6 +207,7 @@ export type Database = {
           custom_discount?: number | null
           customer_name: string
           delivery_area: string
+          delivery_charge?: number | null
           discount_amount?: number | null
           id?: string
           items?: Json
@@ -225,6 +227,7 @@ export type Database = {
           custom_discount?: number | null
           customer_name?: string
           delivery_area?: string
+          delivery_charge?: number | null
           discount_amount?: number | null
           id?: string
           items?: Json

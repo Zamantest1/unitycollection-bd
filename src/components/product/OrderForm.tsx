@@ -180,6 +180,7 @@ export function OrderForm({ product }: OrderFormProps) {
           },
         ],
         subtotal,
+        delivery_charge: deliveryCharge,
         discount_amount: discount,
         coupon_code: appliedCoupon?.code || null,
         referral_code: validatedReferral || null,
