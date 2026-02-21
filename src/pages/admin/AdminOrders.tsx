@@ -134,12 +134,13 @@ const AdminOrders = () => {
       delivery_area: order.delivery_area,
       coupon_code: order.coupon_code || "",
       custom_discount: order.custom_discount || 0,
+      delivery_charge: order.delivery_charge || 0,
     });
     setEditItems(items.map((item: any) => ({ ...item, quantity: item.quantity || 1 })));
   };
 
   // Recalculate totals
-  const recalcEditTotals = async (items: any[], couponCode: string, customDiscount: number = 0) => {
+  const recalcEditTotals = async (items: any[], couponCode: string, customDiscount: number = 0, deliveryCharge: number = 0) => {
     const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.price) * Number(item.quantity || 1)), 0);
     let couponDiscount = 0;
 
@@ -163,7 +164,8 @@ const AdminOrders = () => {
     }
 
     const totalDiscount = couponDiscount + Number(customDiscount || 0);
-    return { subtotal, discount_amount: totalDiscount, custom_discount: Number(customDiscount || 0), total: Math.max(subtotal - totalDiscount, 0) };
+    const dc = Number(deliveryCharge || 0);
+    return { subtotal, discount_amount: totalDiscount, custom_discount: Number(customDiscount || 0), delivery_charge: dc, total: Math.max(subtotal + dc - totalDiscount, 0) };
   };
 
   const handleEditSave = async () => {
@@ -173,7 +175,7 @@ const AdminOrders = () => {
       toast({ title: "Order must have at least one item", variant: "destructive" });
       return;
     }
-    const totals = await recalcEditTotals(validItems, editForm.coupon_code, editForm.custom_discount);
+    const totals = await recalcEditTotals(validItems, editForm.coupon_code, editForm.custom_discount, editForm.delivery_charge);
     editOrderMutation.mutate({
       customer_name: editForm.customer_name,
       phone: editForm.phone,
@@ -181,6 +183,7 @@ const AdminOrders = () => {
       delivery_area: editForm.delivery_area,
       coupon_code: editForm.coupon_code || null,
       custom_discount: totals.custom_discount,
+      delivery_charge: totals.delivery_charge,
       items: validItems,
       subtotal: totals.subtotal,
       discount_amount: totals.discount_amount,
@@ -492,10 +495,22 @@ const AdminOrders = () => {
                   <span>Subtotal</span>
                   <span>৳{selectedOrder.subtotal}</span>
                 </div>
+                {selectedOrder.delivery_charge > 0 && (
+                  <div className="flex justify-between">
+                    <span>Delivery Charge</span>
+                    <span>৳{selectedOrder.delivery_charge}</span>
+                  </div>
+                )}
                 {selectedOrder.discount_amount > 0 && (
                   <div className="flex justify-between text-primary">
-                    <span>Discount ({selectedOrder.coupon_code})</span>
+                    <span>Discount {selectedOrder.coupon_code ? `(${selectedOrder.coupon_code})` : ""}</span>
                     <span>-৳{selectedOrder.discount_amount}</span>
+                  </div>
+                )}
+                {selectedOrder.custom_discount > 0 && (
+                  <div className="flex justify-between text-primary">
+                    <span>Custom Discount</span>
+                    <span>-৳{selectedOrder.custom_discount}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg pt-2">
@@ -567,6 +582,16 @@ const AdminOrders = () => {
                     min={0}
                     value={editForm.custom_discount}
                     onChange={(e) => setEditForm({ ...editForm, custom_discount: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label>Delivery Charge (৳)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editForm.delivery_charge}
+                    onChange={(e) => setEditForm({ ...editForm, delivery_charge: parseFloat(e.target.value) || 0 })}
                     placeholder="0"
                   />
                 </div>
