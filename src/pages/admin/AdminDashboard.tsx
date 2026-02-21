@@ -30,7 +30,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const [productsData, ordersData] = await Promise.all([
         supabase.from("products").select("stock_quantity, sold_count"),
-        supabase.from("orders").select("total, discount_amount, status"),
+        supabase.from("orders").select("total, discount_amount, status, items"),
       ]);
 
       const products = productsData.data || [];
@@ -38,7 +38,10 @@ const AdminDashboard = () => {
 
       return {
         totalRevenue: orders.filter(o => o.status === "delivered").reduce((sum, o) => sum + Number(o.total), 0),
-        itemsSold: products.reduce((sum, p) => sum + (p.sold_count || 0), 0),
+        itemsSold: orders.filter(o => o.status === "delivered").reduce((sum, o) => {
+          const items = Array.isArray(o.items) ? o.items : [];
+          return sum + items.reduce((iSum: number, item: any) => iSum + (item.quantity || 0), 0);
+        }, 0),
         totalStock: products.reduce((sum, p) => sum + (p.stock_quantity || 0), 0),
         discountsGiven: orders.reduce((sum, o) => sum + Number(o.discount_amount || 0), 0),
       };
@@ -67,7 +70,7 @@ const AdminDashboard = () => {
   ];
 
   const businessCards = [
-    { title: "Total Revenue", value: `৳${businessStats?.totalRevenue || 0}`, icon: DollarSign, color: "text-green-600" },
+    { title: "Total Sales", value: `৳${businessStats?.totalRevenue || 0}`, icon: DollarSign, color: "text-green-600" },
     { title: "Items Sold", value: businessStats?.itemsSold || 0, icon: TrendingUp, color: "text-blue-600" },
     { title: "Total Stock", value: businessStats?.totalStock || 0, icon: Warehouse, color: "text-purple-600" },
     { title: "Discounts Given", value: `৳${businessStats?.discountsGiven || 0}`, icon: Percent, color: "text-orange-600" },
