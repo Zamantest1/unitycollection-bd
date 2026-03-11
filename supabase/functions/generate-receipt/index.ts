@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
     page.drawText(`Tk. ${order.subtotal.toLocaleString()}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
 
     // Delivery
-    const deliveryCharge = (order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? 60 : 120;
+    const deliveryCharge = order.delivery_charge != null ? Number(order.delivery_charge) : ((order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? 60 : 120);
     yPos -= 18;
     page.drawText("Delivery:", { x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: mutedColor });
     page.drawText(`Tk. ${deliveryCharge}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });

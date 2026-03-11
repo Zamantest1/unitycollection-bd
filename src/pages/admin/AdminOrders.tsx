@@ -359,76 +359,85 @@ const AdminOrders = () => {
 
       {/* Orders List */}
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+            <div key={i} className="h-14 bg-muted animate-pulse rounded" />
           ))}
         </div>
       ) : filteredOrders.length > 0 ? (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <Card key={order.id}>
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-bold text-foreground">{order.order_id}</h3>
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                      {order.referral_code && (
-                        <Badge variant="outline" className="text-xs">
-                          Ref: {order.referral_code}
-                        </Badge>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Order</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground hidden md:table-cell">Customer</th>
+                  <th className="text-right px-3 py-2 font-medium text-muted-foreground">Total</th>
+                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Status</th>
+                  <th className="text-right px-3 py-2 font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOrders.map((order) => (
+                  <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                    <td className="px-3 py-2">
+                      <div className="font-semibold text-foreground">{order.order_id}</div>
+                      <div className="text-xs text-muted-foreground md:hidden">{order.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</div>
+                    </td>
+                    <td className="px-3 py-2 hidden md:table-cell">
+                      <div className="text-foreground">{order.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{order.phone}</div>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="font-bold text-gold">৳{order.total}</div>
+                      {order.discount_amount > 0 && (
+                        <div className="text-xs text-muted-foreground">-৳{order.discount_amount}</div>
                       )}
-                    </div>
-                    <p className="text-sm text-foreground">{order.customer_name}</p>
-                    <p className="text-sm text-muted-foreground">{order.phone}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(order.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-gold font-bold text-lg">৳{order.total}</p>
-                    {order.discount_amount > 0 && (
-                      <p className="text-xs text-muted-foreground">Discount: ৳{order.discount_amount}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Select
-                      value={order.status}
-                      onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status })}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {updateStatusOptions.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => openEditModal(order)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    {order.status !== "returned" && order.status !== "cancelled" && (
-                      <Button size="sm" variant="outline" onClick={() => setReturnOrder(order)}>
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button size="sm" variant="destructive" onClick={() => setDeleteOrder(order)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <Select
+                        value={order.status}
+                        onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status })}
+                      >
+                        <SelectTrigger className="h-7 w-28 text-xs mx-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {updateStatusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {order.referral_code && (
+                        <div className="text-xs text-muted-foreground mt-1">Ref: {order.referral_code}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedOrder(order)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditModal(order)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {order.status !== "returned" && order.status !== "cancelled" && (
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setReturnOrder(order)}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteOrder(order)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
