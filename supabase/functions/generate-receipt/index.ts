@@ -18,8 +18,11 @@ interface OrderItem {
 // Strip non-ASCII characters for PDF compatibility (pdf-lib only supports WinAnsi/Latin)
 function sanitizeText(text: string): string {
   if (!text) return "";
-  // Remove non-ASCII characters and clean up extra spaces
-  return text.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, " ").trim();
+  return text
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, "")
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // For product names with "English | Bengali" format, extract just the English part
