@@ -3,9 +3,7 @@ import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  // NOTE: Browsers send a preflight including Supabase's extra headers (e.g. x-supabase-client-platform).
-  // If we don't allow them, the browser blocks the request and the client sees "Failed to fetch".
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -243,7 +241,7 @@ Deno.serve(async (req) => {
     page.drawText(`Tk. ${order.subtotal.toLocaleString()}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
 
     // Delivery
-    const deliveryCharge = (order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? 60 : 120;
+    const deliveryCharge = order.delivery_charge != null ? Number(order.delivery_charge) : ((order.delivery_area === "dhaka" || order.delivery_area === "rajshahi") ? 60 : 120);
     yPos -= 18;
     page.drawText("Delivery:", { x: rightMargin - 150, y: yPos, size: 10, font: helvetica, color: mutedColor });
     page.drawText(`Tk. ${deliveryCharge}`, { x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor });
