@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     // Order details
     yPos -= 30;
     page.drawText("Order ID:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(order.order_id, { x: leftMargin + 80, y: yPos, size: 10, font: helveticaBold, color: textColor });
+    page.drawText(sanitizeText(order.order_id), { x: leftMargin + 80, y: yPos, size: 10, font: helveticaBold, color: textColor });
 
     yPos -= 18;
     page.drawText("Date:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
@@ -157,8 +157,8 @@ Deno.serve(async (req) => {
 
     yPos -= 18;
     page.drawText("Status:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(order.status.charAt(0).toUpperCase() + order.status.slice(1), { 
-      x: leftMargin + 80, y: yPos, size: 10, font: helvetica, color: textColor 
+    page.drawText(sanitizeText(order.status.charAt(0).toUpperCase() + order.status.slice(1)), {
+      x: leftMargin + 80, y: yPos, size: 10, font: helvetica, color: textColor
     });
 
     // Line
