@@ -59,6 +59,18 @@ const AdminOrders = () => {
     },
   });
 
+  const { data: coupons = [] } = useQuery({
+    queryKey: ["admin-coupons-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("code, discount_type, discount_value, is_active")
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -579,10 +591,23 @@ const AdminOrders = () => {
                 </div>
                 <div>
                   <Label>Coupon Code</Label>
-                  <div className="relative">
-                    <Input value={editForm.coupon_code} onChange={(e) => setEditForm({ ...editForm, coupon_code: e.target.value })} placeholder="Enter coupon" />
-                    {couponLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
-                  </div>
+                  <Select
+                    value={editForm.coupon_code || "none"}
+                    onValueChange={(v) => setEditForm({ ...editForm, coupon_code: v === "none" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select coupon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Coupon</SelectItem>
+                      {coupons.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.code} ({c.discount_type === "percentage" ? `${c.discount_value}%` : `৳${c.discount_value}`})
+                          {!c.is_active && " [inactive]"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Custom Discount (৳)</Label>
