@@ -18,8 +18,11 @@ interface OrderItem {
 // Strip non-ASCII characters for PDF compatibility (pdf-lib only supports WinAnsi/Latin)
 function sanitizeText(text: string): string {
   if (!text) return "";
-  // Remove non-ASCII characters and clean up extra spaces
-  return text.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, " ").trim();
+  return text
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, "")
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // For product names with "English | Bengali" format, extract just the English part
@@ -142,7 +145,7 @@ Deno.serve(async (req) => {
     // Order details
     yPos -= 30;
     page.drawText("Order ID:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(order.order_id, { x: leftMargin + 80, y: yPos, size: 10, font: helveticaBold, color: textColor });
+    page.drawText(sanitizeText(order.order_id), { x: leftMargin + 80, y: yPos, size: 10, font: helveticaBold, color: textColor });
 
     yPos -= 18;
     page.drawText("Date:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
@@ -154,8 +157,8 @@ Deno.serve(async (req) => {
 
     yPos -= 18;
     page.drawText("Status:", { x: leftMargin, y: yPos, size: 10, font: helvetica, color: mutedColor });
-    page.drawText(order.status.charAt(0).toUpperCase() + order.status.slice(1), { 
-      x: leftMargin + 80, y: yPos, size: 10, font: helvetica, color: textColor 
+    page.drawText(sanitizeText(order.status.charAt(0).toUpperCase() + order.status.slice(1)), {
+      x: leftMargin + 80, y: yPos, size: 10, font: helvetica, color: textColor
     });
 
     // Line
@@ -175,7 +178,7 @@ Deno.serve(async (req) => {
     page.drawText(sanitizeText(order.customer_name), { x: leftMargin, y: yPos, size: 11, font: helveticaBold, color: textColor });
 
     yPos -= 15;
-    page.drawText(order.phone, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
+    page.drawText(sanitizeText(order.phone), { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
 
     yPos -= 15;
     // Wrap address if too long
@@ -217,10 +220,12 @@ Deno.serve(async (req) => {
     for (const item of items) {
       yPos -= 20;
       const itemName = sanitizeProductName(item.name);
-      const itemText = `${itemName}${item.size ? ` (Size: ${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`;
+      const safeSize = sanitizeText(item.size || "");
+      const safeQty = Number(item.quantity || 1);
+      const itemText = `${itemName}${safeSize ? ` (Size: ${safeSize})` : ""}${safeQty > 1 ? ` x${safeQty}` : ""}`;
       page.drawText(itemText, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
       
-      const itemTotal = (item.price * (item.quantity || 1));
+      const itemTotal = Number(item.price || 0) * safeQty;
       page.drawText(`Tk. ${itemTotal.toLocaleString()}`, { 
         x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor 
       });
