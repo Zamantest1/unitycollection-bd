@@ -59,6 +59,18 @@ const AdminOrders = () => {
     },
   });
 
+  const { data: coupons = [] } = useQuery({
+    queryKey: ["admin-coupons-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("code, discount_type, discount_value, is_active")
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
