@@ -217,10 +217,12 @@ Deno.serve(async (req) => {
     for (const item of items) {
       yPos -= 20;
       const itemName = sanitizeProductName(item.name);
-      const itemText = `${itemName}${item.size ? ` (Size: ${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`;
+      const safeSize = sanitizeText(item.size || "");
+      const safeQty = Number(item.quantity || 1);
+      const itemText = `${itemName}${safeSize ? ` (Size: ${safeSize})` : ""}${safeQty > 1 ? ` x${safeQty}` : ""}`;
       page.drawText(itemText, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
       
-      const itemTotal = (item.price * (item.quantity || 1));
+      const itemTotal = Number(item.price || 0) * safeQty;
       page.drawText(`Tk. ${itemTotal.toLocaleString()}`, { 
         x: rightMargin - 70, y: yPos, size: 10, font: helvetica, color: textColor 
       });
