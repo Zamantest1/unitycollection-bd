@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
     page.drawText(sanitizeText(order.customer_name), { x: leftMargin, y: yPos, size: 11, font: helveticaBold, color: textColor });
 
     yPos -= 15;
-    page.drawText(order.phone, { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
+    page.drawText(sanitizeText(order.phone), { x: leftMargin, y: yPos, size: 10, font: helvetica, color: textColor });
 
     yPos -= 15;
     // Wrap address if too long
