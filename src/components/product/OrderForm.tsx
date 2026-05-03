@@ -160,39 +160,45 @@ export function OrderForm({ product }: OrderFormProps) {
         throw new Error("Sorry, this product is now out of stock");
       }
 
-      // Generate a temporary order_id - the trigger will replace it
-      const tempOrderId = `UC-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-      
-      const orderData = {
-        order_id: tempOrderId,
+      const items = [
+        {
+          product_id: product.id,
+          name: product.name,
+          price: product.price,
+          size: product.size,
+          quantity: 1,
+          product_code: product.productCode || null,
+        },
+      ];
+
+      // NOTE: Customers (anon) cannot SELECT from `orders`, and the BEFORE-INSERT
+      // trigger overwrites the client-supplied order_id. We use a SECURITY DEFINER
+      // RPC to insert the row server-side and return the real, trigger-generated
+      // order_id so tracking URLs are correct.
+      const { data: orderId, error } = await supabase.rpc("create_customer_order", {
+        p_customer_name: data.customerName,
+        p_phone: data.phone,
+        p_address: data.address,
+        p_delivery_area: data.deliveryArea,
+        p_delivery_charge: deliveryCharge,
+        p_items: items,
+        p_subtotal: subtotal,
+        p_discount_amount: discount,
+        p_coupon_code: appliedCoupon?.code || null,
+        p_referral_code: validatedReferral || null,
+        p_member_id: null,
+        p_total: total,
+      });
+      if (error) throw error;
+      if (!orderId) throw new Error("Order could not be created");
+
+      return {
+        order_id: orderId,
         customer_name: data.customerName,
         phone: data.phone,
         address: data.address,
         delivery_area: data.deliveryArea,
-        items: [
-          {
-            product_id: product.id,
-            name: product.name,
-            price: product.price,
-            size: product.size,
-            quantity: 1,
-            product_code: product.productCode || null,
-          },
-        ],
-        subtotal,
-        delivery_charge: deliveryCharge,
-        discount_amount: discount,
-        coupon_code: appliedCoupon?.code || null,
-        referral_code: validatedReferral || null,
-        total: total,
       };
-
-      // NOTE: Customers (anon users) are not allowed to SELECT from `orders` (PII),
-      // so we must avoid `.select()` here. Otherwise PostgREST rejects returning rows.
-      const { error } = await supabase.from("orders").insert(orderData);
-      if (error) throw error;
-
-      return orderData;
     },
     onSuccess: (order) => {
       // Generate WhatsApp message

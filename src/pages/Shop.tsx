@@ -90,6 +90,12 @@ const Shop = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryFromUrl]);
 
+  // Sync local state when navigating with ?category=… in the URL (e.g. from cmdk search)
+  useEffect(() => {
+    if (categoryFromUrl !== selectedCategory) setSelectedCategory(categoryFromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryFromUrl]);
+
   return (
     <Layout>
       <div className="bg-background min-h-screen">
