@@ -31,6 +31,7 @@ interface OrderFormProps {
     size?: string;
     stockQuantity?: number;
     productCode?: string;
+    imageUrl?: string;
   };
 }
 
@@ -168,6 +169,7 @@ export function OrderForm({ product }: OrderFormProps) {
           size: product.size,
           quantity: 1,
           product_code: product.productCode || null,
+          image_url: product.imageUrl || null,
         },
       ];
 

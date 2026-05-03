@@ -234,6 +234,7 @@ const Cart = () => {
         size: item.size,
         quantity: item.quantity,
         product_code: item.productCode || null,
+        image_url: item.imageUrl || null,
       }));
 
       // NOTE: Customers (anon) cannot SELECT from `orders`, and the BEFORE-INSERT

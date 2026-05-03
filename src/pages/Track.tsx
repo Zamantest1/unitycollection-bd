@@ -48,11 +48,10 @@ interface TrackingOrder {
   total: number;
   items: Array<{
     name?: string;
-    image_urls?: string[];
+    image_url?: string;
     quantity?: number;
-    selectedSize?: string;
+    size?: string;
     price?: number;
-    discount_price?: number | null;
   }>;
   customer_name_initial: string;
   phone_masked: string;
@@ -292,8 +291,8 @@ export default function Track() {
                         <li className="py-3 text-sm text-muted-foreground">No item details available.</li>
                       )}
                       {order.items.map((it, idx) => {
-                        const img = it.image_urls?.[0];
-                        const unit = it.discount_price ?? it.price ?? 0;
+                        const img = it.image_url;
+                        const unit = it.price ?? 0;
                         return (
                           <li key={idx} className="py-3 flex items-center gap-3">
                             {img ? (
@@ -306,7 +305,7 @@ export default function Track() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{it.name ?? "Item"}</p>
                               <p className="text-xs text-muted-foreground">
-                                {it.selectedSize ? `Size ${it.selectedSize} · ` : ""}Qty {it.quantity ?? 1}
+                                {it.size ? `Size ${it.size} · ` : ""}Qty {it.quantity ?? 1}
                               </p>
                             </div>
                             <p className="text-sm font-semibold text-primary">
