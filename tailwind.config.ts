@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
@@ -19,7 +18,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Playfair Display"', 'serif'],
-        heading: ['"Cormorant Garamond"', 'serif'],
+        heading: ['"Playfair Display"', 'serif'],
         sans: ['Inter', 'sans-serif'],
       },
       colors: {
@@ -95,8 +94,8 @@ export default {
           to: { transform: "translateX(0)" },
         },
         "marquee": {
-          "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(-100%)" },
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
       animation: {

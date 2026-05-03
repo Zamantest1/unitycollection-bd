@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,10 +11,11 @@ import { PullToRefresh } from "@/components/shop/PullToRefresh";
 const Shop = () => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
-  
+
   const categoryFromUrl = searchParams.get("category");
+  const queryFromUrl = searchParams.get("q") ?? "";
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
+  const [searchQuery, setSearchQuery] = useState(queryFromUrl);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
@@ -56,14 +57,38 @@ const Shop = () => {
     return result;
   }, [products, selectedCategory, searchQuery]);
 
+  // Keep URL in sync with the search/category state so links can be shared.
+  const updateUrl = useCallback(
+    (next: { category?: string | null; q?: string | null }) => {
+      const params = new URLSearchParams(searchParams);
+      if (next.category !== undefined) {
+        if (next.category) params.set("category", next.category);
+        else params.delete("category");
+      }
+      if (next.q !== undefined) {
+        if (next.q) params.set("q", next.q);
+        else params.delete("q");
+      }
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
   const handleCategoryChange = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
-    if (categoryId) {
-      setSearchParams({ category: categoryId });
-    } else {
-      setSearchParams({});
-    }
+    updateUrl({ category: categoryId });
   };
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    updateUrl({ q });
+  };
+
+  // Sync local state when navigating with ?q=… in the URL (e.g. from cmdk search)
+  useEffect(() => {
+    if (queryFromUrl !== searchQuery) setSearchQuery(queryFromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryFromUrl]);
 
   return (
     <Layout>
@@ -75,7 +100,7 @@ const Shop = () => {
               Our <span className="text-gold">Collection</span>
             </h1>
             <p className="text-primary-foreground/80 text-center mt-2">
-              Discover premium Bangladeshi Punjabi for every occasion
+              Premium men&apos;s Punjabi &amp; traditional wear, made in Bangladesh
             </p>
           </div>
         </div>
@@ -83,7 +108,7 @@ const Shop = () => {
         <PullToRefresh onRefresh={handleRefresh}>
           <div className="container mx-auto px-4 py-8">
             {/* Search */}
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <SearchBar value={searchQuery} onChange={handleSearchChange} />
 
             {/* Category Filter */}
             <CategoryFilter

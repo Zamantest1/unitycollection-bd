@@ -317,9 +317,11 @@ const Cart = () => {
         .map((item) => `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - Tk.${item.price * item.quantity}`)
         .join("\n");
 
+      const trackingUrl = `${window.location.origin}/track/${order.order_id}`;
       const message = encodeURIComponent(
         `🛍️ *New Order from Unity Collection*\n\n` +
           `📋 *Order ID:* ${order.order_id}\n` +
+          `🔗 *Track Order:* ${trackingUrl}\n` +
           `👤 *Name:* ${order.customer_name}\n` +
           `📞 *Phone:* ${order.phone}\n` +
           `📍 *Address:* ${order.address}\n` +
@@ -336,7 +338,7 @@ const Cart = () => {
 
       toast({
         title: "Order Placed!",
-        description: `Order ID: ${order.order_id}. Redirecting to WhatsApp...`,
+        description: `Order ID: ${order.order_id}. Track at /track/${order.order_id}`,
       });
 
       clearCart();

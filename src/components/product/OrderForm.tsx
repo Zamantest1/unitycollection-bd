@@ -196,9 +196,11 @@ export function OrderForm({ product }: OrderFormProps) {
     },
     onSuccess: (order) => {
       // Generate WhatsApp message
+      const trackingUrl = `${window.location.origin}/track/${order.order_id}`;
       const message = encodeURIComponent(
         `🛍️ *New Order from Unity Collection*\n\n` +
         `📋 *Order ID:* ${order.order_id}\n` +
+        `🔗 *Track Order:* ${trackingUrl}\n` +
         `👤 *Name:* ${order.customer_name}\n` +
         `📞 *Phone:* ${order.phone}\n` +
         `📍 *Address:* ${order.address}\n` +
@@ -218,7 +220,7 @@ export function OrderForm({ product }: OrderFormProps) {
 
       toast({
         title: "Order Placed!",
-        description: `Order ID: ${order.order_id}. Redirecting to WhatsApp...`,
+        description: `Order ID: ${order.order_id}. Track at /track/${order.order_id}`,
       });
     },
     onError: (error: Error) => {
