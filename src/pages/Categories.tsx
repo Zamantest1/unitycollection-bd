@@ -28,7 +28,7 @@ const Categories = () => {
               Browse by <span className="text-gold">Category</span>
             </h1>
             <p className="text-primary-foreground/80 text-center mt-2">
-              Explore our curated collections
+              Curated men&apos;s collections &mdash; Punjabi, kurtas, and formal sets
             </p>
           </div>
         </div>

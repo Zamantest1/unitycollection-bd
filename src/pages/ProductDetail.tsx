@@ -293,6 +293,7 @@ const ProductDetail = () => {
                       size: selectedSize || undefined,
                       stockQuantity,
                       productCode: (product as any).product_code,
+                      imageUrl: product.image_urls?.[0],
                     }}
                   />
                 </div>

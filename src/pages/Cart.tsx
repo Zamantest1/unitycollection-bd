@@ -227,37 +227,44 @@ const Cart = () => {
         }
       }
 
-      const tempOrderId = `UC-${Math.floor(Math.random() * 10000).toString().padStart(4, "0")}`;
+      const orderItems = items.map((item) => ({
+        product_id: item.productId,
+        name: item.name,
+        price: item.price,
+        size: item.size,
+        quantity: item.quantity,
+        product_code: item.productCode || null,
+        image_url: item.imageUrl || null,
+      }));
 
-      const orderData = {
-        order_id: tempOrderId,
+      // NOTE: Customers (anon) cannot SELECT from `orders`, and the BEFORE-INSERT
+      // trigger overwrites the client-supplied order_id. We use a SECURITY DEFINER
+      // RPC to insert the row server-side and return the real, trigger-generated
+      // order_id so tracking URLs are correct.
+      const { data: orderId, error } = await supabase.rpc("create_customer_order", {
+        p_customer_name: data.customerName,
+        p_phone: data.phone,
+        p_address: data.address,
+        p_delivery_area: data.deliveryArea,
+        p_delivery_charge: deliveryCharge,
+        p_items: orderItems,
+        p_subtotal: subtotal,
+        p_discount_amount: totalDiscount,
+        p_coupon_code: appliedCoupon?.code || null,
+        p_referral_code: validatedReferral || null,
+        p_member_id: detectedMember?.id || null,
+        p_total: total,
+      });
+      if (error) throw error;
+      if (!orderId) throw new Error("Order could not be created");
+
+      return {
+        order_id: orderId,
         customer_name: data.customerName,
         phone: data.phone,
         address: data.address,
         delivery_area: data.deliveryArea,
-        items: items.map((item) => ({
-          product_id: item.productId,
-          name: item.name,
-          price: item.price,
-          size: item.size,
-          quantity: item.quantity,
-          product_code: item.productCode || null,
-        })),
-        subtotal,
-        discount_amount: totalDiscount,
-        coupon_code: appliedCoupon?.code || null,
-        referral_code: validatedReferral || null,
-        member_id: detectedMember?.id || null,
-        total,
       };
-
-      // NOTE: Customers (anon users) are not allowed to SELECT from `orders` (PII),
-      // so we must avoid `.select()` here. Otherwise PostgREST rejects returning rows.
-      const { error } = await supabase.from("orders").insert(orderData);
-      if (error) throw error;
-
-      // Return what we already know so the success flow can continue.
-      return orderData;
     },
     onSuccess: async (order) => {
       // Check for auto-membership creation
@@ -317,9 +324,11 @@ const Cart = () => {
         .map((item) => `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - Tk.${item.price * item.quantity}`)
         .join("\n");
 
+      const trackingUrl = `${window.location.origin}/track/${order.order_id}`;
       const message = encodeURIComponent(
         `🛍️ *New Order from Unity Collection*\n\n` +
           `📋 *Order ID:* ${order.order_id}\n` +
+          `🔗 *Track Order:* ${trackingUrl}\n` +
           `👤 *Name:* ${order.customer_name}\n` +
           `📞 *Phone:* ${order.phone}\n` +
           `📍 *Address:* ${order.address}\n` +
@@ -336,7 +345,7 @@ const Cart = () => {
 
       toast({
         title: "Order Placed!",
-        description: `Order ID: ${order.order_id}. Redirecting to WhatsApp...`,
+        description: `Order ID: ${order.order_id}. Track at /track/${order.order_id}`,
       });
 
       clearCart();

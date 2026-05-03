@@ -83,13 +83,16 @@ export function HeroBanner() {
   // Fallback banner if no banners in database
   if (banners.length === 0) {
     return (
-      <section className="relative h-[50vh] md:h-[70vh] bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+      <section className="relative h-[50vh] md:h-[70vh] bg-gradient-primary flex items-center justify-center">
         <div className="text-center text-primary-foreground px-4">
+          <p className="text-[11px] md:text-xs uppercase tracking-[0.25em] text-gold mb-3">
+            For Men · Made in Bangladesh
+          </p>
           <h1 className="font-display text-4xl md:text-6xl font-bold mb-4">
             Premium <span className="text-gold">Punjabi</span> Collection
           </h1>
           <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto opacity-90">
-            Discover elegant traditional Bangladeshi clothing for every occasion
+            Heritage-crafted men&apos;s traditional wear for Eid, Ramadan, and every special occasion.
           </p>
           <Link to="/shop">
             <Button size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90">

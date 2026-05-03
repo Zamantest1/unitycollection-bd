@@ -45,7 +45,7 @@ const About = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              Premium Bangladeshi Traditional Men's Clothing Brand
+              Premium men&apos;s traditional wear, made in Bangladesh.
             </motion.p>
           </div>
         </div>
@@ -64,7 +64,7 @@ const About = () => {
               </h2>
               <div className="space-y-4 text-muted leading-relaxed">
                 <p>
-                  <strong className="text-foreground">Unity Collection</strong> is a Bangladeshi traditional clothing brand focused on men's ethnic wear, especially <span className="text-gold font-medium">Punjabi (Panjabi)</span>, designed for cultural, religious, and festive occasions such as Eid, Ramadan, weddings, and special family events.
+                  <strong className="text-foreground">Unity Collection</strong> is a premium men&apos;s clothing house from Bangladesh, focused exclusively on traditional men&apos;s wear &mdash; especially <span className="text-gold font-medium">Punjabi (Panjabi)</span>, kurtas, and formal sets &mdash; designed for cultural, religious, and festive occasions such as Eid, Ramadan, weddings, and special family events.
                 </p>
                 <p>
                   The brand was initially operated as a seasonal business, mainly active during Eid collections. Over time, Unity Collection has built strong customer trust and demand, leading to a decision to transform the business into a long-term, year-round brand with a strong online presence.
@@ -126,7 +126,7 @@ const About = () => {
                 Our <span className="text-gold">Vision</span>
               </h2>
               <p className="text-primary-foreground/90 text-lg leading-relaxed">
-                To become a trusted and recognizable Bangladeshi traditional menswear brand, offering premium-quality Punjabi collections while maintaining accessibility for everyday customers.
+                To become Bangladesh&apos;s most trusted men&apos;s traditional-wear house &mdash; offering premium-quality Punjabi and ethnic collections while staying accessible to the everyday gentleman.
               </p>
             </div>
           </motion.section>
@@ -151,7 +151,7 @@ const About = () => {
                 {
                   icon: Heart,
                   title: "Cultural Authenticity",
-                  description: "Preserving and celebrating Bangladeshi traditional fashion with every design we create."
+                  description: "Preserving and celebrating Bangladesh's heritage of men's traditional fashion with every design we create."
                 },
                 {
                   icon: Users,

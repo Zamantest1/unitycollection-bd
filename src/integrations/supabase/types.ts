@@ -397,6 +397,40 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      get_order_tracking: {
+        Args: { p_order_id: string }
+        Returns: {
+          order_id: string
+          status: string
+          delivery_area: string
+          delivery_charge: number
+          subtotal: number
+          discount_amount: number
+          total: number
+          items: Json
+          customer_name_initial: string
+          phone_masked: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      create_customer_order: {
+        Args: {
+          p_customer_name: string
+          p_phone: string
+          p_address: string
+          p_delivery_area: string
+          p_delivery_charge: number
+          p_items: Json
+          p_subtotal: number
+          p_discount_amount: number
+          p_coupon_code: string | null
+          p_referral_code: string | null
+          p_member_id: string | null
+          p_total: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user"
