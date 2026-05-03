@@ -36,12 +36,12 @@ export function CategoryFilter({ selectedCategory, onSelectCategory }: CategoryF
   };
 
   return (
-    <div className="mb-6">
+    <div>
       {/* Mobile Toggle */}
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden w-full justify-between border-border"
+        className="md:hidden w-full justify-between rounded-xl border-border"
       >
         <span>
           {selectedCategoryName ? `Category: ${selectedCategoryName}` : "Filter by Category"}
@@ -64,7 +64,7 @@ export function CategoryFilter({ selectedCategory, onSelectCategory }: CategoryF
             className={cn(
               selectedCategory === null
                 ? "bg-primary text-primary-foreground"
-                : "border-border hover:border-primary"
+                : "border-border bg-background hover:border-primary"
             )}
           >
             All Products
@@ -79,7 +79,7 @@ export function CategoryFilter({ selectedCategory, onSelectCategory }: CategoryF
               className={cn(
                 selectedCategory === category.id
                   ? "bg-primary text-primary-foreground"
-                  : "border-border hover:border-primary"
+                  : "border-border bg-background hover:border-primary"
               )}
             >
               {category.name}

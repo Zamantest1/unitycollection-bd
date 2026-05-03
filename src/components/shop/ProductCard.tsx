@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Check } from "lucide-react";
+import { ShoppingCart, Check, Eye } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,7 +78,7 @@ export function ProductCard({ product }: ProductCardProps) {
     >
       <Link
         to={`/product/${product.id}`}
-        className="block group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+        className="block group h-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-primary/10"
       >
         {/* Image with lazy loading and blur placeholder */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -91,25 +91,31 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
-            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
               isOutOfStock ? "opacity-60" : ""
             } ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"}`}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-secondary/45 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
             {hasDiscount && !isOutOfStock && (
-              <Badge className="bg-gold text-gold-foreground">
+              <Badge className="border-0 bg-gold text-gold-foreground shadow-md">
                 -{discountPercent}%
               </Badge>
             )}
             {isOutOfStock && (
-              <Badge variant="destructive">
+              <Badge variant="destructive" className="shadow-md">
                 Sold Out
               </Badge>
             )}
+          </div>
 
-
+          <div className="absolute left-3 right-3 top-3 flex justify-end">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-medium text-foreground opacity-0 shadow-sm backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
+              <Eye className="h-3 w-3" />
+              View
+            </span>
           </div>
 
           {/* Quick Add Button */}
@@ -117,12 +123,12 @@ export function ProductCard({ product }: ProductCardProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute bottom-2 right-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
+              className="absolute bottom-3 right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
             >
               <Button
                 size="icon"
                 onClick={handleQuickAdd}
-                className={`h-9 w-9 rounded-full shadow-md transition-all ${
+                className={`h-10 w-10 rounded-full shadow-lg transition-all ${
                   isAdded 
                     ? "bg-green-500 hover:bg-green-600" 
                     : "bg-gold hover:bg-gold/90"
@@ -142,12 +148,12 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="p-3 md:p-4">
           {/* Category */}
           {product.categories?.name && (
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold mb-1">
               {product.categories.name}
             </p>
           )}
           {product.product_code && (
-            <p className="text-[10px] text-muted-foreground/70 font-mono mb-1">{product.product_code}</p>
+            <p className="text-[10px] text-muted-foreground/70 font-mono mb-1.5">{product.product_code}</p>
           )}
 
           {/* Name */}
@@ -156,7 +162,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </h3>
 
           {/* Price */}
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={`font-bold text-lg ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`}>
               ৳{displayPrice?.toLocaleString()}
             </span>
@@ -166,6 +172,11 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
+          {!isOutOfStock && stockQuantity <= 3 && (
+            <p className="mt-2 text-xs font-medium text-destructive">
+              Only {stockQuantity} left
+            </p>
+          )}
         </div>
       </Link>
     </motion.div>

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { OrderForm } from "@/components/product/OrderForm";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
-import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Ruler, ShieldCheck, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -105,7 +105,7 @@ const ProductDetail = () => {
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {/* Image Gallery */}
             <div className="space-y-4">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-card">
+              <div className="relative aspect-square rounded-2xl overflow-hidden bg-card shadow-sm">
                 <img
                   src={images[currentImage]}
                   alt={product.name}
@@ -151,7 +151,7 @@ const ProductDetail = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentImage(index)}
-                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-colors ${
                         index === currentImage ? "border-gold" : "border-transparent"
                       }`}
                     >
@@ -163,10 +163,10 @@ const ProductDetail = () => {
             </div>
 
             {/* Product Info */}
-            <div>
+            <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm md:p-6">
               {/* Category */}
               {product.categories?.name && (
-                <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold text-gold uppercase tracking-[0.18em] mb-2">
                   {product.categories.name}
                 </p>
               )}
@@ -175,12 +175,12 @@ const ProductDetail = () => {
               <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                 {product.name}
               </h1>
-              {(product as any).product_code && (
-                <p className="text-xs text-muted-foreground mb-4 font-mono">Product Code: {(product as any).product_code}</p>
+              {product.product_code && (
+                <p className="text-xs text-muted-foreground mb-4 font-mono">Product Code: {product.product_code}</p>
               )}
 
               {/* Price */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
                 <span className="text-gold font-bold text-2xl md:text-3xl">
                   ৳{displayPrice?.toLocaleString()}
                 </span>
@@ -189,6 +189,24 @@ const ProductDetail = () => {
                     ৳{product.price.toLocaleString()}
                   </span>
                 )}
+              </div>
+
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <Truck className="mb-2 h-5 w-5 text-gold" />
+                  <p className="text-xs font-semibold text-foreground">Fast Delivery</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Rajshahi 1-2 days</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <ShieldCheck className="mb-2 h-5 w-5 text-gold" />
+                  <p className="text-xs font-semibold text-foreground">Premium Fabric</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Quality checked</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background p-3">
+                  <Ruler className="mb-2 h-5 w-5 text-gold" />
+                  <p className="text-xs font-semibold text-foreground">Easy Sizing</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Select before cart</p>
+                </div>
               </div>
 
               {/* Stock Status */}
@@ -265,7 +283,7 @@ const ProductDetail = () => {
                       originalPrice: product.price,
                       imageUrl: images[0],
                       stockQuantity,
-                      productCode: (product as any).product_code,
+                      productCode: product.product_code,
                     }}
                     selectedSize={selectedSize || undefined}
                     requiresSize={sizes.length > 0}
@@ -292,7 +310,7 @@ const ProductDetail = () => {
                       price: displayPrice!,
                       size: selectedSize || undefined,
                       stockQuantity,
-                      productCode: (product as any).product_code,
+                      productCode: product.product_code,
                     }}
                   />
                 </div>
