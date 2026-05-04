@@ -1,15 +1,9 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, Facebook, Instagram, Truck, MessageCircle, Banknote } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Instagram, Truck, MessageCircle } from "lucide-react";
+import { PaymentLogos } from "@/components/payment/PaymentLogos";
 
 const LOGO_URL = "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 const WHATSAPP_NUMBER = "8801880545357";
-
-const paymentChips = [
-  { label: "Cash on Delivery", icon: Banknote },
-  { label: "bKash", emoji: "💗" },
-  { label: "Nagad", emoji: "🟧" },
-  { label: "Rocket", emoji: "🟪" },
-];
 
 export function Footer() {
   return (
@@ -122,21 +116,7 @@ export function Footer() {
             </div>
 
             <h4 className="font-display text-sm font-semibold text-gold mb-3 uppercase tracking-wider">We Accept</h4>
-            <div className="flex flex-wrap gap-2">
-              {paymentChips.map((chip) => (
-                <span
-                  key={chip.label}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/40 border border-gold/20 text-[11px] font-medium"
-                >
-                  {"icon" in chip && chip.icon ? (
-                    <chip.icon className="h-3.5 w-3.5 text-gold" />
-                  ) : (
-                    <span aria-hidden>{chip.emoji}</span>
-                  )}
-                  {chip.label}
-                </span>
-              ))}
-            </div>
+            <PaymentLogos />
           </div>
         </div>
 

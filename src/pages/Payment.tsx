@@ -1,0 +1,634 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  Copy,
+  CheckCircle2,
+  MessageCircle,
+  ShieldCheck,
+  Phone,
+  User,
+  Hash,
+  AlertCircle,
+  Loader2,
+  ChevronRight,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Layout } from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+const WHATSAPP_NUMBER = "8801880545357";
+const LOGO_URL =
+  "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
+
+/**
+ * Method config — visual scaffold only.
+ * Receiving numbers and labels will be admin-controlled in PR 3
+ * (`payment_methods` table). For now they're hardcoded constants.
+ */
+type MethodKey = "bkash" | "nagad" | "rocket";
+
+interface MethodConfig {
+  key: MethodKey;
+  name: string;
+  /** "Send Money" or "Payment". */
+  type: "Send Money" | "Payment";
+  /** Receiving merchant number — replace per real account in PR 3. */
+  number: string;
+  /** Brand color (hex). */
+  color: string;
+  /** Subtle gradient end for the header band. */
+  colorDark: string;
+  /** Text color used over the brand color background. */
+  fg: string;
+  /** Path to the logo SVG in /public/payment/. */
+  logo: string;
+  instructions: string;
+}
+
+const METHODS: Record<MethodKey, MethodConfig> = {
+  bkash: {
+    key: "bkash",
+    name: "bKash",
+    type: "Send Money",
+    number: "01XXXXXXXXX",
+    color: "#E2136E",
+    colorDark: "#9D0848",
+    fg: "#FFFFFF",
+    logo: "/payment/bkash.svg",
+    instructions:
+      "Open your bKash app → tap Send Money → enter the number above → enter the amount → confirm. Then submit the Transaction ID below.",
+  },
+  nagad: {
+    key: "nagad",
+    name: "Nagad",
+    type: "Send Money",
+    number: "01XXXXXXXXX",
+    color: "#EE1C25",
+    colorDark: "#9F1318",
+    fg: "#FFFFFF",
+    logo: "/payment/nagad.svg",
+    instructions:
+      "Open your Nagad app → tap Send Money → enter the number above → enter the amount → confirm. Then submit the Transaction ID below.",
+  },
+  rocket: {
+    key: "rocket",
+    name: "Rocket",
+    type: "Payment",
+    number: "01XXXXXXXXX",
+    color: "#8C1F8E",
+    colorDark: "#5A1359",
+    fg: "#FFFFFF",
+    logo: "/payment/rocket.svg",
+    instructions:
+      "Dial *322# → tap Payment → enter the merchant number above → enter the amount → confirm. Then submit the Transaction ID below.",
+  },
+};
+
+interface OrderRow {
+  order_id: string;
+  status: string;
+  total: number;
+  customer_name_initial: string;
+  phone_masked: string;
+  created_at: string;
+}
+
+export default function Payment() {
+  const { orderId, method: methodParam } = useParams<{
+    orderId: string;
+    method?: string;
+  }>();
+  const navigate = useNavigate();
+
+  const method = methodParam && (methodParam in METHODS)
+    ? (methodParam as MethodKey)
+    : null;
+
+  // Order summary (uses the same anon-safe RPC as /track)
+  const {
+    data: order,
+    isLoading,
+    error,
+  } = useQuery<OrderRow | null>({
+    queryKey: ["payment-order", orderId],
+    enabled: !!orderId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_order_tracking", {
+        p_order_id: orderId!,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : null;
+      return row as OrderRow | null;
+    },
+  });
+
+  // Form state for the method-specific page
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [trxId, setTrxId] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  // Reset form / submission state when method changes
+  useEffect(() => {
+    setSubmitted(false);
+    setTrxId("");
+  }, [methodParam]);
+
+  const amount = order?.total ?? 0;
+  const totalPretty = useMemo(() => `৳${amount.toLocaleString()}`, [amount]);
+
+  const copyNumber = async (n: string) => {
+    try {
+      await navigator.clipboard.writeText(n);
+      toast.success("Number copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
+  const buildWhatsAppMessage = (methodCfg: MethodConfig) => {
+    const lines = [
+      "📥 *Payment submitted — Unity Collection*",
+      ``,
+      `📋 *Order ID:* ${orderId}`,
+      `💳 *Method:* ${methodCfg.name} (${methodCfg.type})`,
+      `📞 *Sent to:* ${methodCfg.number}`,
+      `💰 *Amount:* ৳${amount.toLocaleString()}`,
+      ``,
+      `👤 *Name:* ${name || "—"}`,
+      `📱 *My number:* ${phone || "—"}`,
+      `🧾 *Transaction ID:* ${trxId || "—"}`,
+      ``,
+      `Please verify and confirm my order.`,
+    ];
+    return encodeURIComponent(lines.join("\n"));
+  };
+
+  /* ----------------------------------------------------------- */
+  /*  Loading / error states                                     */
+  /* ----------------------------------------------------------- */
+  if (!orderId) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="font-display text-2xl font-bold">Missing order</h1>
+          <p className="text-muted-foreground mt-2">
+            We couldn&apos;t find an order ID in the URL.
+          </p>
+          <Link to="/" className="inline-block mt-6">
+            <Button className="rounded-full bg-gradient-gold-strong text-gold-foreground">
+              Back to home
+            </Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 max-w-md text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
+            <AlertCircle className="h-7 w-7 text-destructive" />
+          </div>
+          <h1 className="font-display text-2xl font-bold">Order not found</h1>
+          <p className="text-muted-foreground mt-2">
+            We couldn&apos;t find an order with ID
+            <span className="font-mono ml-1">{orderId}</span>. Double-check the link
+            from your confirmation message.
+          </p>
+          <Link to={`/track/${orderId}`} className="inline-block mt-6">
+            <Button className="rounded-full bg-gradient-gold-strong text-gold-foreground">
+              Try tracking instead
+            </Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  /* ----------------------------------------------------------- */
+  /*  Header — shown on selector + method form                   */
+  /* ----------------------------------------------------------- */
+  const Header = ({
+    accent,
+    accentDark,
+    fg,
+  }: {
+    accent: string;
+    accentDark: string;
+    fg: string;
+  }) => (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${accent} 0%, ${accentDark} 100%)`,
+        color: fg,
+      }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-20 mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 0%, rgba(255,255,255,0.4) 0%, transparent 40%)",
+        }}
+      />
+      <div className="relative container mx-auto px-4 py-5 md:py-7 flex items-center gap-3">
+        <span className="inline-flex items-center justify-center h-11 w-11 rounded-full bg-white/15 ring-2 ring-white/30 shadow-md backdrop-blur-sm">
+          <img
+            src={LOGO_URL}
+            alt="Unity Collection"
+            className="h-7 w-7 object-contain"
+          />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[0.25em] opacity-80">
+            Unity Collection
+          </p>
+          <h1 className="font-display text-base md:text-lg font-bold truncate">
+            Pay {totalPretty}
+            <span className="hidden md:inline"> · For Men, Bangladesh</span>
+          </h1>
+          <p className="text-[11px] md:text-xs opacity-80 mt-0.5">
+            Invoice No: <span className="font-mono">{order.order_id}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ----------------------------------------------------------- */
+  /*  Step 3 — Confirmation                                      */
+  /* ----------------------------------------------------------- */
+  if (submitted && method) {
+    const cfg = METHODS[method];
+    return (
+      <Layout>
+        <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
+          <Header accent={cfg.color} accentDark={cfg.colorDark} fg={cfg.fg} />
+
+          <div className="container mx-auto px-4 py-8 max-w-md">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card rounded-2xl shadow-md ring-1 ring-gold/15 p-6 md:p-8 text-center"
+            >
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-500/15 text-green-600 mb-4">
+                <CheckCircle2 className="h-7 w-7" />
+              </span>
+              <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">
+                Payment submitted for review
+              </h2>
+              <p className="text-muted-foreground mt-2">
+                We&apos;ll verify your transaction and confirm your order shortly. You
+                can check the status anytime from your tracking page.
+              </p>
+
+              <dl className="text-left text-sm mt-5 space-y-2 rounded-xl bg-gold-soft/30 p-4 border border-gold/15">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Order</dt>
+                  <dd className="font-mono">{order.order_id}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Method</dt>
+                  <dd className="font-medium">{cfg.name}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Amount</dt>
+                  <dd className="font-semibold">{totalPretty}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">TrxID</dt>
+                  <dd className="font-mono break-all text-right max-w-[60%]">
+                    {trxId || "—"}
+                  </dd>
+                </div>
+              </dl>
+
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppMessage(cfg)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 w-full inline-flex items-center justify-center gap-2 h-12 rounded-full bg-[#25D366] text-white font-medium hover:bg-[#1DB954] transition-colors shadow-[0_10px_30px_-8px_rgba(37,211,102,0.55)]"
+              >
+                <MessageCircle className="h-5 w-5" />
+                Send to WhatsApp
+              </a>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link to={`/track/${order.order_id}`}>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-gold/30"
+                  >
+                    Track order
+                  </Button>
+                </Link>
+                <Link to="/shop">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-gold/30"
+                  >
+                    Continue shopping
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  /* ----------------------------------------------------------- */
+  /*  Step 2 — Method-specific branded page                       */
+  /* ----------------------------------------------------------- */
+  if (method) {
+    const cfg = METHODS[method];
+    const formValid = name.trim().length >= 2 && phone.trim().length >= 11 && trxId.trim().length >= 4;
+
+    const onSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!formValid) {
+        toast.error("Please fill in name, phone and Transaction ID.");
+        return;
+      }
+      setSubmitted(true);
+    };
+
+    return (
+      <Layout>
+        <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
+          <Header accent={cfg.color} accentDark={cfg.colorDark} fg={cfg.fg} />
+
+          <div className="container mx-auto px-4 py-6 max-w-xl">
+            <button
+              type="button"
+              onClick={() => navigate(`/payment/${order.order_id}`)}
+              className="text-sm text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Choose a different method
+            </button>
+
+            {/* Method card */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl bg-card shadow-md ring-1 ring-gold/15 overflow-hidden"
+            >
+              <div
+                className="flex items-center gap-3 px-4 py-3"
+                style={{ background: `${cfg.color}10` }}
+              >
+                <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white shadow ring-1 ring-black/5">
+                  <img src={cfg.logo} alt={cfg.name} className="h-6 w-auto" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-foreground">{cfg.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {cfg.type} · Manual verification
+                  </p>
+                </div>
+                <Badge
+                  className="border-0"
+                  style={{ background: cfg.color, color: cfg.fg }}
+                >
+                  {totalPretty}
+                </Badge>
+              </div>
+
+              {/* Receiving number block */}
+              <div className="px-4 md:px-5 py-5 border-b border-border">
+                <p
+                  className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-1.5"
+                  style={{ color: cfg.colorDark }}
+                >
+                  {cfg.type === "Send Money"
+                    ? "Send Money to this number"
+                    : "Pay to this merchant number"}
+                </p>
+                <div className="flex items-center gap-3">
+                  <p className="font-mono text-xl md:text-2xl font-bold text-foreground tracking-wide">
+                    {cfg.number}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyNumber(cfg.number)}
+                    className="rounded-full ml-auto h-9"
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                  {cfg.instructions}
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={onSubmit} className="p-4 md:p-5 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="pay-name"
+                      className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1"
+                    >
+                      <User className="h-3 w-3" /> Your name
+                    </Label>
+                    <Input
+                      id="pay-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="As on order"
+                      className="h-11 rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="pay-phone"
+                      className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1"
+                    >
+                      <Phone className="h-3 w-3" /> Your phone (sender)
+                    </Label>
+                    <Input
+                      id="pay-phone"
+                      inputMode="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="h-11 rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="pay-trx"
+                    className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1"
+                  >
+                    <Hash className="h-3 w-3" /> Transaction ID (TrxID)
+                  </Label>
+                  <Input
+                    id="pay-trx"
+                    value={trxId}
+                    onChange={(e) => setTrxId(e.target.value.toUpperCase())}
+                    placeholder="e.g. 8N7C4D1Z2A"
+                    className="h-12 rounded-lg font-mono tracking-wider text-center text-lg"
+                    style={{ borderColor: `${cfg.color}55` }}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    You&apos;ll find this in your {cfg.name} app message after a
+                    successful {cfg.type.toLowerCase()}.
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-full shadow-md"
+                  style={{
+                    background: `linear-gradient(135deg, ${cfg.color}, ${cfg.colorDark})`,
+                    color: cfg.fg,
+                  }}
+                >
+                  Submit & confirm payment
+                </Button>
+
+                <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground justify-center">
+                  <ShieldCheck className="h-3 w-3" />
+                  Your payment is verified manually by Unity Collection. No card data
+                  is collected.
+                </p>
+              </form>
+            </motion.div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  /* ----------------------------------------------------------- */
+  /*  Step 1 — Method selector                                   */
+  /* ----------------------------------------------------------- */
+  return (
+    <Layout>
+      <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
+        {/* Brand header */}
+        <Header accent="#0F4D45" accentDark="#0B3A34" fg="#F8F6F2" />
+
+        <div className="container mx-auto px-4 py-6 max-w-xl">
+          <Link
+            to={`/track/${order.order_id}`}
+            className="text-sm text-muted-foreground hover:text-foreground mb-3 inline-flex items-center gap-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            View order details
+          </Link>
+
+          {/* Order summary */}
+          <div className="rounded-2xl bg-card shadow-sm ring-1 ring-gold/15 p-4 md:p-5 mb-4">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-gold font-semibold">
+              Order summary
+            </p>
+            <div className="mt-2 flex items-baseline justify-between">
+              <p className="font-display font-bold text-lg text-foreground">
+                Invoice No
+              </p>
+              <p className="font-mono text-sm text-foreground">{order.order_id}</p>
+            </div>
+            <div className="mt-1 flex items-baseline justify-between">
+              <p className="text-sm text-muted-foreground">Customer</p>
+              <p className="text-sm text-foreground">
+                {order.customer_name_initial}
+                <span className="ml-2 font-mono text-muted-foreground">
+                  {order.phone_masked}
+                </span>
+              </p>
+            </div>
+            <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
+              <p className="text-sm text-muted-foreground">Amount due</p>
+              <p className="font-display text-2xl font-bold text-gold">
+                {totalPretty}
+              </p>
+            </div>
+          </div>
+
+          <h2 className="font-display text-base font-semibold text-foreground mb-2">
+            Choose how you&apos;d like to pay
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            All methods are verified manually. After paying, submit your Transaction
+            ID and we&apos;ll confirm shortly.
+          </p>
+
+          <ul className="space-y-3">
+            <AnimatePresence initial={false}>
+              {(Object.keys(METHODS) as MethodKey[]).map((k) => {
+                const cfg = METHODS[k];
+                return (
+                  <motion.li
+                    key={k}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link
+                      to={`/payment/${order.order_id}/${cfg.key}`}
+                      className="group flex items-center gap-4 rounded-2xl bg-card ring-1 ring-border hover:ring-gold/40 hover:shadow-md transition-all p-3 md:p-4"
+                    >
+                      <span
+                        className="inline-flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-xl bg-white shadow-sm ring-1 ring-black/5"
+                        style={{ background: `${cfg.color}10` }}
+                      >
+                        <img src={cfg.logo} alt={cfg.name} className="h-7 w-auto" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display font-bold text-foreground">
+                          {cfg.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {cfg.type} ·{" "}
+                          <span className="font-mono">{cfg.number}</span>
+                        </p>
+                      </div>
+                      <ChevronRight
+                        className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
+                    </Link>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
+
+          <p className="mt-5 flex items-center gap-1.5 text-[11px] text-muted-foreground justify-center">
+            <ShieldCheck className="h-3 w-3" />
+            Manual verification · No card details required.
+          </p>
+        </div>
+      </div>
+    </Layout>
+  );
+}

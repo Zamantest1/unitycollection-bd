@@ -22,6 +22,7 @@ import AdminNotice from "./pages/admin/AdminNotice";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminMembers from "./pages/admin/AdminMembers";
 import Track from "./pages/Track";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,8 @@ const App = () => (
             <Route path="/cart" element={<Cart />} />
             <Route path="/track" element={<Track />} />
             <Route path="/track/:orderId" element={<Track />} />
+            <Route path="/payment/:orderId" element={<Payment />} />
+            <Route path="/payment/:orderId/:method" element={<Payment />} />
 
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

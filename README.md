@@ -1,73 +1,49 @@
-# Welcome to your Lovable project
+# Unity Collection — Men's Traditional Wear (Bangladesh)
 
-## Project info
+Premium men's traditional wear, made in Bangladesh. E-commerce storefront + admin
+panel built with Vite, React, TypeScript, Tailwind CSS, shadcn/ui and Supabase.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Local development
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Requires Node.js (≥ 18) and npm.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+git clone https://github.com/Zamantest1/unitycollection-bd.git
+cd unitycollection-bd
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The dev server runs on `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Useful scripts
 
-**Use GitHub Codespaces**
+```sh
+npm run dev        # Vite dev server
+npm run build      # production build
+npm run lint       # eslint
+npm run test       # vitest run (unit tests)
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Tech stack
 
-## What technologies are used for this project?
+- Vite + React 18 + TypeScript
+- Tailwind CSS + shadcn/ui
+- TanStack Query for data fetching
+- Supabase (Postgres + Auth + Storage) with RLS
+- Framer Motion for animations
+- Vite PWA plugin for the admin app shell
 
-This project is built with:
+## Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The site auto-deploys to Vercel on every push to `main`. Pull requests get
+preview URLs via the Vercel GitHub integration.
 
-## How can I deploy this project?
+## Supabase migrations
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+SQL migrations live in `supabase/migrations/`. Apply them in order before
+testing the customer-facing tracking and order-creation flows. Recent ones:
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- `20260503180000_track_order_rpc.sql` — anon-safe tracking RPC.
+- `20260503190000_create_order_rpc.sql` — `SECURITY DEFINER` RPC that returns
+  the trigger-generated `order_id` so tracking URLs are correct.

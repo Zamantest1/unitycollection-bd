@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { NoticeBar } from "@/components/home/NoticeBar";
@@ -11,6 +12,13 @@ interface LayoutProps {
 }
 
 export function Layout({ children, showNotice = true }: LayoutProps) {
+  const location = useLocation();
+  // Hide the floating WhatsApp on /cart and /payment so it doesn't
+  // overlap the checkout form / payment submission flow.
+  const hideFloatingWA =
+    location.pathname.startsWith("/cart") ||
+    location.pathname.startsWith("/payment");
+
   return (
     <div className="min-h-screen flex flex-col">
       {showNotice && <NoticeBar />}
@@ -18,11 +26,9 @@ export function Layout({ children, showNotice = true }: LayoutProps) {
       {/* Pad bottom on mobile so the BottomNav doesn't cover content */}
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <Footer />
-      {/* Desktop keeps the floating WhatsApp bubble; mobile uses BottomNav. */}
-      <div className="hidden md:block">
-        <FloatingWhatsApp />
-      </div>
       <BottomNav />
+      {/* Floating WhatsApp — visible on both mobile and desktop, hidden on /cart. */}
+      {!hideFloatingWA && <FloatingWhatsApp />}
     </div>
   );
 }
