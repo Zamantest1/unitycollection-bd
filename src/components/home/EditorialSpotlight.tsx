@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 
 /**
  * Slim editorial slot — single unified gradient band, no inner card.
- * Lives between Categories and Featured.
+ * Lives between Categories and Featured. Designed mobile-first compact
+ * so it doesn't dominate the homepage scroll.
  */
 export function EditorialSpotlight() {
   return (
-    <section className="bg-background py-6 md:py-10">
+    <section className="bg-background py-4 md:py-10">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -25,31 +26,31 @@ export function EditorialSpotlight() {
                 "linear-gradient(120deg, transparent 60%, hsl(var(--gold)) 60%, hsl(var(--gold)) 60.6%, transparent 60.6%)",
             }}
           />
-          <div className="relative flex flex-col md:flex-row items-center gap-4 md:gap-8 px-5 py-6 md:px-10 md:py-8">
-            <div className="text-center md:text-left flex-1">
-              <p className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-gold mb-2">
-                <Sparkles className="h-3 w-3" />
-                Eid · Ramadan · Special occasions
+          <div className="relative flex flex-col md:flex-row items-center gap-3 md:gap-8 px-4 py-4 md:px-10 md:py-8">
+            <div className="text-center md:text-left flex-1 min-w-0">
+              <p className="inline-flex items-center gap-1.5 text-[9px] md:text-[11px] uppercase tracking-[0.25em] md:tracking-[0.3em] text-gold mb-1.5 md:mb-2">
+                <Sparkles className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                Eid · Ramadan · Special
               </p>
-              <h3 className="font-display text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
-                Heritage-crafted <span className="text-gold">Punjabi</span> for the modern
-                Bangladeshi gentleman.
+              <h3 className="font-display text-[15px] md:text-2xl lg:text-3xl font-bold leading-snug md:leading-tight">
+                Heritage-crafted <span className="text-gold">Punjabi</span> for the
+                modern Bangladeshi gentleman.
               </h3>
-              <p className="text-primary-foreground/85 text-sm md:text-[15px] mt-2 md:mt-3 max-w-xl mx-auto md:mx-0">
-                Premium fabrics, refined cuts, detailing that lasts beyond the season.
+              <p className="text-primary-foreground/85 text-[12px] md:text-[15px] mt-1.5 md:mt-3 max-w-xl mx-auto md:mx-0 leading-snug">
+                Premium fabrics, refined cuts, detailing that lasts.
               </p>
             </div>
 
-            <div className="shrink-0 flex flex-wrap gap-2 md:gap-3 justify-center md:justify-end">
-              <Link to="/shop">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold text-gold-foreground px-5 py-2.5 text-sm font-semibold shadow-md hover:bg-gold/90 transition-colors">
-                  Shop the collection
-                  <ArrowRight className="h-4 w-4" />
+            <div className="shrink-0 flex flex-row gap-2 md:gap-3 justify-center md:justify-end mt-1 md:mt-0">
+              <Link to="/shop" className="flex-1 md:flex-none">
+                <span className="w-full inline-flex items-center justify-center gap-1.5 rounded-full bg-gold text-gold-foreground px-3.5 md:px-5 py-2 md:py-2.5 text-[12px] md:text-sm font-semibold shadow-md hover:bg-gold/90 transition-colors">
+                  Shop now
+                  <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </span>
               </Link>
-              <Link to="/categories">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/60 text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
-                  Browse categories
+              <Link to="/categories" className="flex-1 md:flex-none">
+                <span className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-gold/60 text-primary-foreground px-3.5 md:px-5 py-2 md:py-2.5 text-[12px] md:text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+                  Categories
                 </span>
               </Link>
             </div>
