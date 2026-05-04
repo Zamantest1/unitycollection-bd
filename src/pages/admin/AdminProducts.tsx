@@ -14,6 +14,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, Search, Package, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+
+type StockFilter = "all" | "out" | "low" | "in_stock";
+
+interface ProductRow {
+  id: string;
+  name: string;
+  product_code: string | null;
+  stock_quantity: number;
+  category_id: string | null;
+  is_active: boolean;
+}
 
 interface ProductForm {
   name: string;
@@ -51,6 +63,9 @@ const AdminProducts = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>(defaultForm);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [pendingDelete, setPendingDelete] = useState<ProductRow | null>(null);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
@@ -198,33 +213,82 @@ const AdminProducts = () => {
 
   const filteredProducts = products.filter((p) => {
     const q = searchQuery.toLowerCase();
-    return p.name.toLowerCase().includes(q) || (p.product_code as string)?.toLowerCase().includes(q);
+    const matchesQuery =
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      (p.product_code as string)?.toLowerCase().includes(q);
+    const matchesCategory =
+      categoryFilter === "all" || p.category_id === categoryFilter;
+    const stock = p.stock_quantity ?? 0;
+    const matchesStock =
+      stockFilter === "all" ||
+      (stockFilter === "out" && stock === 0) ||
+      (stockFilter === "low" && stock > 0 && stock <= 3) ||
+      (stockFilter === "in_stock" && stock > 3);
+    return matchesQuery && matchesCategory && matchesStock;
   });
 
-  const lowStockCount = products.filter((p) => p.stock_quantity === 1).length;
+  const lowStockCount = products.filter(
+    (p) => p.stock_quantity > 0 && p.stock_quantity <= 3,
+  ).length;
+  const outOfStockCount = products.filter(
+    (p) => p.stock_quantity === 0,
+  ).length;
 
   return (
     <AdminLayout title="Products">
-      {/* Low Stock Alert */}
-      {lowStockCount > 0 && (
-        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-destructive" />
-         <span className="text-sm text-destructive font-medium animate-pulse">
-            ⚠️ {lowStockCount} product(s) have only 1 item left in stock - restock soon!
+      {/* Low / out-of-stock alert */}
+      {(lowStockCount > 0 || outOfStockCount > 0) && (
+        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3 flex-wrap">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+          <span className="text-sm text-destructive font-medium">
+            {outOfStockCount > 0 && `${outOfStockCount} out of stock`}
+            {outOfStockCount > 0 && lowStockCount > 0 && " · "}
+            {lowStockCount > 0 && `${lowStockCount} low (≤3 left)`}
+            {" — restock soon."}
           </span>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col md:flex-row gap-3 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full md:w-44">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={stockFilter}
+            onValueChange={(v) => setStockFilter(v as StockFilter)}
+          >
+            <SelectTrigger className="w-full md:w-44">
+              <SelectValue placeholder="Stock" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All stock</SelectItem>
+              <SelectItem value="in_stock">In stock (&gt;3)</SelectItem>
+              <SelectItem value="low">Low (≤3)</SelectItem>
+              <SelectItem value="out">Out of stock</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); else setIsDialogOpen(true); }}>
@@ -481,8 +545,7 @@ const AdminProducts = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => deleteMutation.mutate(product.id)}
-                      disabled={deleteMutation.isPending}
+                      onClick={() => setPendingDelete(product as ProductRow)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -497,6 +560,21 @@ const AdminProducts = () => {
           <p>No products found</p>
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete "${pendingDelete?.name}"?`}
+        description="This product will be permanently removed from the catalog. Past orders containing it are unaffected."
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteMutation.mutate(pendingDelete.id, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+      />
     </AdminLayout>
   );
 };

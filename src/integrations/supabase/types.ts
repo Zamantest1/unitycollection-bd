@@ -250,6 +250,114 @@ export type Database = {
           },
         ]
       }
+      page_views: {
+        Row: {
+          id: number
+          path: string
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+          visited_at: string
+        }
+        Insert: {
+          id?: number
+          path: string
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Update: {
+          id?: number
+          path?: string
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          account_number: string
+          created_at: string
+          display_order: number | null
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          key: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          key: string
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          key?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_submissions: {
+        Row: {
+          admin_note: string | null
+          amount: number | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          method_key: string
+          order_id: string
+          status: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount?: number | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          method_key: string
+          order_id: string
+          status?: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          method_key?: string
+          order_id?: string
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -428,6 +536,45 @@ export type Database = {
           p_referral_code: string | null
           p_member_id: string | null
           p_total: number
+        }
+        Returns: string
+      }
+      track_page_view: {
+        Args: {
+          p_path: string
+          p_session_id: string
+          p_user_agent: string | null
+          p_referrer: string | null
+        }
+        Returns: undefined
+      }
+      get_visit_stats: {
+        Args: never
+        Returns: {
+          visits_today: number
+          visits_7d: number
+          visits_30d: number
+          unique_visitors_today: number
+          unique_visitors_7d: number
+          unique_visitors_30d: number
+        }[]
+      }
+      get_top_pages: {
+        Args: { p_days: number; p_limit: number }
+        Returns: { path: string; views: number; unique_visitors: number }[]
+      }
+      get_visits_by_day: {
+        Args: { p_days: number }
+        Returns: { day: string; views: number; unique_visitors: number }[]
+      }
+      submit_payment: {
+        Args: {
+          p_order_id: string
+          p_method_key: string
+          p_customer_name: string | null
+          p_customer_phone: string | null
+          p_transaction_id: string
+          p_amount: number | null
         }
         Returns: string
       }

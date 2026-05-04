@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
+import RequireAdmin from "@/components/admin/RequireAdmin";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -21,6 +23,8 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminNotice from "./pages/admin/AdminNotice";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminMembers from "./pages/admin/AdminMembers";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import Track from "./pages/Track";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
@@ -34,6 +38,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <PageViewTracker />
           <Routes>
             {/* Customer Routes */}
             <Route path="/" element={<Index />} />
@@ -48,17 +53,26 @@ const App = () => (
             <Route path="/payment/:orderId" element={<Payment />} />
             <Route path="/payment/:orderId/:method" element={<Payment />} />
 
-            {/* Admin Routes */}
+            {/* Admin login (outside the auth gate) */}
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            <Route path="/admin/categories" element={<AdminCategories />} />
-            <Route path="/admin/banners" element={<AdminBanners />} />
-            <Route path="/admin/coupons" element={<AdminCoupons />} />
-            <Route path="/admin/referrals" element={<AdminReferrals />} />
-            <Route path="/admin/members" element={<AdminMembers />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/notice" element={<AdminNotice />} />
+
+            {/* Admin routes — auth + role check runs ONCE in RequireAdmin */}
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/banners" element={<AdminBanners />} />
+              <Route path="/admin/coupons" element={<AdminCoupons />} />
+              <Route path="/admin/referrals" element={<AdminReferrals />} />
+              <Route path="/admin/members" element={<AdminMembers />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/notice" element={<AdminNotice />} />
+              <Route path="/admin/payments" element={<AdminPayments />} />
+              <Route
+                path="/admin/payment-methods"
+                element={<AdminPaymentMethods />}
+              />
+            </Route>
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

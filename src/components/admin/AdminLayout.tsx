@@ -1,6 +1,5 @@
-import { useState, useEffect, ReactNode } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -15,10 +14,12 @@ import {
   Users,
   UserCheck,
   X,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { InstallPrompt } from "./InstallPrompt";
+import { useAdminAuth } from "./RequireAdmin";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
@@ -32,7 +33,7 @@ interface NavItem {
   name: string;
   path: string;
   icon: typeof LayoutDashboard;
-  group: "Overview" | "Catalog" | "Customers" | "Marketing";
+  group: "Overview" | "Catalog" | "Customers" | "Marketing" | "Payments";
 }
 
 const navItems: NavItem[] = [
@@ -43,72 +44,24 @@ const navItems: NavItem[] = [
   { name: "Banners", path: "/admin/banners", icon: ImageIcon, group: "Catalog" },
   { name: "Members", path: "/admin/members", icon: UserCheck, group: "Customers" },
   { name: "Referrals", path: "/admin/referrals", icon: Users, group: "Customers" },
+  { name: "Payments", path: "/admin/payments", icon: CreditCard, group: "Payments" },
+  { name: "Payment Methods", path: "/admin/payment-methods", icon: CreditCard, group: "Payments" },
   { name: "Coupons", path: "/admin/coupons", icon: Tag, group: "Marketing" },
   { name: "Notice Bar", path: "/admin/notice", icon: Bell, group: "Marketing" },
 ];
 
-const groups: NavItem["group"][] = ["Overview", "Catalog", "Customers", "Marketing"];
+const groups: NavItem["group"][] = [
+  "Overview",
+  "Catalog",
+  "Customers",
+  "Payments",
+  "Marketing",
+];
 
 export function AdminLayout({ children, title }: AdminLayoutProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [adminEmail, setAdminEmail] = useState<string>("");
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        navigate("/admin/login");
-        return;
-      }
-
-      const { data: role } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (!role) {
-        await supabase.auth.signOut();
-        navigate("/admin/login");
-        return;
-      }
-
-      setAdminEmail(session.user.email ?? "");
-      setIsLoading(false);
-    };
-
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/admin/login");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/admin/login");
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-gold border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  const { email: adminEmail, logout: handleLogout } = useAdminAuth();
 
   const adminInitial = (adminEmail[0] ?? "A").toUpperCase();
 

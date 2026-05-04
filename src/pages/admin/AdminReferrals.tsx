@@ -12,6 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, Users, TrendingUp, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+
+interface ReferralRow {
+  id: string;
+  code: string;
+  referrer_name: string;
+}
 
 interface ReferralForm {
   referrer_name: string;
@@ -33,6 +40,7 @@ const AdminReferrals = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<ReferralRow | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ReferralForm>(defaultForm);
 
@@ -332,8 +340,13 @@ const AdminReferrals = () => {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => deleteMutation.mutate(referral.id)}
-                        disabled={deleteMutation.isPending}
+                        onClick={() =>
+                          setPendingDelete({
+                            id: referral.id,
+                            code: referral.code,
+                            referrer_name: referral.referrer_name,
+                          })
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -349,6 +362,21 @@ const AdminReferrals = () => {
           <p>No referrals found</p>
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete referral "${pendingDelete?.code}"?`}
+        description={`Past orders that used ${pendingDelete?.referrer_name}'s code will keep their discount, but the code will stop working at checkout.`}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteMutation.mutate(pendingDelete.id, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+      />
     </AdminLayout>
   );
 };

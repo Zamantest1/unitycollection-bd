@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Loader2,
   ChevronRight,
+  CreditCard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
@@ -28,67 +29,78 @@ const LOGO_URL =
   "https://res.cloudinary.com/dma4usxh0/image/upload/v1769446863/Unity_Collection_Logo_ophmui.png";
 
 /**
- * Method config — visual scaffold only.
- * Receiving numbers and labels will be admin-controlled in PR 3
- * (`payment_methods` table). For now they're hardcoded constants.
+ * Per-brand visual styling for the well-known mobile-banking methods.
+ * Anything not in this map gets the neutral fallback below — so admins
+ * can add brand-new methods from /admin/payment-methods without a code
+ * change, just without the bespoke colour treatment.
  */
-type MethodKey = "bkash" | "nagad" | "rocket";
-
-interface MethodConfig {
-  key: MethodKey;
-  name: string;
-  /** "Send Money" or "Payment". */
-  type: "Send Money" | "Payment";
-  /** Receiving merchant number — replace per real account in PR 3. */
-  number: string;
-  /** Brand color (hex). */
-  color: string;
-  /** Subtle gradient end for the header band. */
-  colorDark: string;
-  /** Text color used over the brand color background. */
-  fg: string;
-  /** Path to the logo SVG in /public/payment/. */
-  logo: string;
-  instructions: string;
-}
-
-const METHODS: Record<MethodKey, MethodConfig> = {
+const BRAND_STYLES: Record<
+  string,
+  { color: string; colorDark: string; fg: string; logo: string }
+> = {
   bkash: {
-    key: "bkash",
-    name: "bKash",
-    type: "Send Money",
-    number: "01XXXXXXXXX",
     color: "#E2136E",
     colorDark: "#9D0848",
     fg: "#FFFFFF",
     logo: "/payment/bkash.svg",
-    instructions:
-      "Open your bKash app → tap Send Money → enter the number above → enter the amount → confirm. Then submit the Transaction ID below.",
   },
   nagad: {
-    key: "nagad",
-    name: "Nagad",
-    type: "Send Money",
-    number: "01XXXXXXXXX",
     color: "#EE1C25",
     colorDark: "#9F1318",
     fg: "#FFFFFF",
     logo: "/payment/nagad.svg",
-    instructions:
-      "Open your Nagad app → tap Send Money → enter the number above → enter the amount → confirm. Then submit the Transaction ID below.",
   },
   rocket: {
-    key: "rocket",
-    name: "Rocket",
-    type: "Payment",
-    number: "01XXXXXXXXX",
     color: "#8C1F8E",
     colorDark: "#5A1359",
     fg: "#FFFFFF",
     logo: "/payment/rocket.svg",
-    instructions:
-      "Dial *322# → tap Payment → enter the merchant number above → enter the amount → confirm. Then submit the Transaction ID below.",
   },
+};
+
+const DEFAULT_STYLE = {
+  color: "#0F4D45",
+  colorDark: "#0B3A34",
+  fg: "#F8F6F2",
+  logo: "",
+};
+
+interface PaymentMethodRow {
+  id: string;
+  key: string;
+  name: string;
+  type: string;
+  account_number: string;
+  instructions: string | null;
+  is_active: boolean | null;
+  display_order: number | null;
+}
+
+interface MethodConfig {
+  key: string;
+  name: string;
+  type: "Send Money" | "Payment";
+  number: string;
+  color: string;
+  colorDark: string;
+  fg: string;
+  logo: string;
+  instructions: string;
+}
+
+const toMethodConfig = (row: PaymentMethodRow): MethodConfig => {
+  const style = BRAND_STYLES[row.key] ?? DEFAULT_STYLE;
+  return {
+    key: row.key,
+    name: row.name,
+    type: row.type === "Payment" ? "Payment" : "Send Money",
+    number: row.account_number,
+    color: style.color,
+    colorDark: style.colorDark,
+    fg: style.fg,
+    logo: style.logo,
+    instructions: row.instructions ?? "",
+  };
 };
 
 interface OrderRow {
@@ -106,10 +118,6 @@ export default function Payment() {
     method?: string;
   }>();
   const navigate = useNavigate();
-
-  const method = methodParam && (methodParam in METHODS)
-    ? (methodParam as MethodKey)
-    : null;
 
   // Order summary (uses the same anon-safe RPC as /track)
   const {
@@ -129,6 +137,32 @@ export default function Payment() {
     },
   });
 
+  // Admin-controlled method list (active only)
+  const { data: methodRows, isLoading: methodsLoading } = useQuery<
+    PaymentMethodRow[]
+  >({
+    queryKey: ["payment-methods-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_methods")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as PaymentMethodRow[];
+    },
+  });
+
+  const methodMap = useMemo(() => {
+    const m: Record<string, MethodConfig> = {};
+    (methodRows ?? []).forEach((row) => {
+      m[row.key] = toMethodConfig(row);
+    });
+    return m;
+  }, [methodRows]);
+
+  const method = methodParam && methodParam in methodMap ? methodParam : null;
+
   // Form state for the method-specific page
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -143,6 +177,31 @@ export default function Payment() {
 
   const amount = order?.total ?? 0;
   const totalPretty = useMemo(() => `৳${amount.toLocaleString()}`, [amount]);
+
+  const submitPayment = useMutation({
+    mutationFn: async (params: {
+      methodKey: string;
+      transactionId: string;
+      name: string;
+      phone: string;
+      amount: number;
+    }) => {
+      if (!orderId) throw new Error("Missing order id");
+      const { data, error } = await supabase.rpc("submit_payment", {
+        p_order_id: orderId,
+        p_method_key: params.methodKey,
+        p_customer_name: params.name,
+        p_customer_phone: params.phone,
+        p_transaction_id: params.transactionId,
+        p_amount: params.amount,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not submit payment");
+    },
+  });
 
   const copyNumber = async (n: string) => {
     try {
@@ -192,7 +251,7 @@ export default function Payment() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || methodsLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-16 flex items-center justify-center">
@@ -280,7 +339,7 @@ export default function Payment() {
   /*  Step 3 — Confirmation                                      */
   /* ----------------------------------------------------------- */
   if (submitted && method) {
-    const cfg = METHODS[method];
+    const cfg = methodMap[method];
     return (
       <Layout>
         <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
@@ -363,16 +422,30 @@ export default function Payment() {
   /*  Step 2 — Method-specific branded page                       */
   /* ----------------------------------------------------------- */
   if (method) {
-    const cfg = METHODS[method];
-    const formValid = name.trim().length >= 2 && phone.trim().length >= 11 && trxId.trim().length >= 4;
+    const cfg = methodMap[method];
+    const formValid =
+      name.trim().length >= 2 &&
+      phone.trim().length >= 11 &&
+      trxId.trim().length >= 4;
 
-    const onSubmit = (e: React.FormEvent) => {
+    const onSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!formValid) {
         toast.error("Please fill in name, phone and Transaction ID.");
         return;
       }
-      setSubmitted(true);
+      try {
+        await submitPayment.mutateAsync({
+          methodKey: cfg.key,
+          transactionId: trxId.trim(),
+          name: name.trim(),
+          phone: phone.trim(),
+          amount,
+        });
+        setSubmitted(true);
+      } catch {
+        // Toast already shown by onError handler.
+      }
     };
 
     return (
@@ -401,7 +474,14 @@ export default function Payment() {
                 style={{ background: `${cfg.color}10` }}
               >
                 <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white shadow ring-1 ring-black/5">
-                  <img src={cfg.logo} alt={cfg.name} className="h-6 w-auto" />
+                  {cfg.logo ? (
+                    <img src={cfg.logo} alt={cfg.name} className="h-6 w-auto" />
+                  ) : (
+                    <CreditCard
+                      className="h-6 w-6"
+                      style={{ color: cfg.color }}
+                    />
+                  )}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-bold text-foreground">{cfg.name}</p>
@@ -442,9 +522,11 @@ export default function Payment() {
                     Copy
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                  {cfg.instructions}
-                </p>
+                {cfg.instructions && (
+                  <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                    {cfg.instructions}
+                  </p>
+                )}
               </div>
 
               {/* Form */}
@@ -506,12 +588,16 @@ export default function Payment() {
 
                 <Button
                   type="submit"
+                  disabled={submitPayment.isPending}
                   className="w-full h-12 rounded-full shadow-md"
                   style={{
                     background: `linear-gradient(135deg, ${cfg.color}, ${cfg.colorDark})`,
                     color: cfg.fg,
                   }}
                 >
+                  {submitPayment.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   Submit & confirm payment
                 </Button>
 
@@ -531,6 +617,10 @@ export default function Payment() {
   /* ----------------------------------------------------------- */
   /*  Step 1 — Method selector                                   */
   /* ----------------------------------------------------------- */
+  const methodList = Object.values(methodMap).sort(
+    (a, b) => (BRAND_STYLES[a.key] ? 0 : 1) - (BRAND_STYLES[b.key] ? 0 : 1),
+  );
+
   return (
     <Layout>
       <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
@@ -582,13 +672,17 @@ export default function Payment() {
             ID and we&apos;ll confirm shortly.
           </p>
 
-          <ul className="space-y-3">
-            <AnimatePresence initial={false}>
-              {(Object.keys(METHODS) as MethodKey[]).map((k) => {
-                const cfg = METHODS[k];
-                return (
+          {methodList.length === 0 ? (
+            <div className="rounded-2xl bg-card ring-1 ring-border p-6 text-center text-sm text-muted-foreground">
+              No payment methods are currently available. Please contact support
+              on WhatsApp to complete your order.
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              <AnimatePresence initial={false}>
+                {methodList.map((cfg) => (
                   <motion.li
-                    key={k}
+                    key={cfg.key}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
@@ -601,7 +695,18 @@ export default function Payment() {
                         className="inline-flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-xl bg-white shadow-sm ring-1 ring-black/5"
                         style={{ background: `${cfg.color}10` }}
                       >
-                        <img src={cfg.logo} alt={cfg.name} className="h-7 w-auto" />
+                        {cfg.logo ? (
+                          <img
+                            src={cfg.logo}
+                            alt={cfg.name}
+                            className="h-7 w-auto"
+                          />
+                        ) : (
+                          <CreditCard
+                            className="h-7 w-7"
+                            style={{ color: cfg.color }}
+                          />
+                        )}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-display font-bold text-foreground">
@@ -618,10 +723,10 @@ export default function Payment() {
                       />
                     </Link>
                   </motion.li>
-                );
-              })}
-            </AnimatePresence>
-          </ul>
+                ))}
+              </AnimatePresence>
+            </ul>
+          )}
 
           <p className="mt-5 flex items-center gap-1.5 text-[11px] text-muted-foreground justify-center">
             <ShieldCheck className="h-3 w-3" />

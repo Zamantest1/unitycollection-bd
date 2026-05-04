@@ -12,12 +12,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+
+interface BannerRow {
+  id: string;
+  title: string | null;
+}
 
 const AdminBanners = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<BannerRow | null>(null);
   const [form, setForm] = useState({
     image_url: "",
     title: "",
@@ -225,8 +232,12 @@ const AdminBanners = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => deleteMutation.mutate(banner.id)}
-                      disabled={deleteMutation.isPending}
+                      onClick={() =>
+                        setPendingDelete({
+                          id: banner.id,
+                          title: banner.title,
+                        })
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -241,6 +252,21 @@ const AdminBanners = () => {
           <p>No banners yet</p>
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete "${pendingDelete?.title || "this banner"}"?`}
+        description="This banner will be removed from the home page immediately."
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteMutation.mutate(pendingDelete.id, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+      />
     </AdminLayout>
   );
 };

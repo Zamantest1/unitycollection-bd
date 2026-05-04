@@ -72,6 +72,7 @@ const Cart = () => {
   const [memberDiscount, setMemberDiscount] = useState(0);
   const [showMembershipCongrats, setShowMembershipCongrats] = useState(false);
   const [newMemberCode, setNewMemberCode] = useState<string | null>(null);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [showCodes, setShowCodes] = useState(false);
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
 
@@ -342,13 +343,18 @@ const Cart = () => {
 
       toast({
         title: "Order Placed!",
-        description: `Order ID: ${order.order_id}. Track at /track/${order.order_id}`,
+        description: `Order ID: ${order.order_id}. Continuing to payment…`,
       });
 
       clearCart();
+      setPlacedOrderId(order.order_id);
 
+      // Send the customer straight to the payment page where they can
+      // pick a method and submit their TrxID. The membership modal still
+      // shows on top of Cart for users who just qualified — its CTA also
+      // routes to /payment.
       if (!showMembershipCongrats) {
-        navigate("/");
+        navigate(`/payment/${order.order_id}`);
       }
     },
     onError: (error: Error) => {
@@ -937,11 +943,15 @@ const Cart = () => {
             <Button
               onClick={() => {
                 setShowMembershipCongrats(false);
-                navigate("/");
+                if (placedOrderId) {
+                  navigate(`/payment/${placedOrderId}`);
+                } else {
+                  navigate("/");
+                }
               }}
               className="w-full bg-gradient-gold-strong text-gold-foreground rounded-full"
             >
-              Continue Shopping
+              {placedOrderId ? "Continue to Payment" : "Continue Shopping"}
             </Button>
           </div>
         </div>
