@@ -40,7 +40,7 @@ export function CategoryLinks() {
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16 bg-gold-soft/20">
+    <section className="py-8 md:py-12 bg-gold-soft/20">
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between gap-4 mb-6 md:mb-8">
           <div>

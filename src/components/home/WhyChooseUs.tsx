@@ -26,7 +26,7 @@ const features = [
 
 export function WhyChooseUs() {
   return (
-    <section className="relative py-14 md:py-20 overflow-hidden bg-gradient-section border-t border-gold/10">
+    <section className="relative py-10 md:py-14 overflow-hidden bg-gradient-section border-t border-gold/10">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 opacity-[0.04]"
@@ -36,7 +36,7 @@ export function WhyChooseUs() {
         }}
       />
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
+        <div className="text-center mb-7 md:mb-9">
           <p className="text-[11px] md:text-xs uppercase tracking-[0.25em] text-gold mb-2">
             The Unity promise
           </p>

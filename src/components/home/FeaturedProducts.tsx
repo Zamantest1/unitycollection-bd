@@ -52,9 +52,9 @@ export function FeaturedProducts() {
   }, [products, tab]);
 
   return (
-    <section className="py-14 md:py-20 bg-background">
+    <section className="py-10 md:py-14 bg-background">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 md:mb-8">
           <div className="text-center md:text-left">
             <p className="text-[11px] md:text-xs uppercase tracking-[0.25em] text-gold mb-1">
               Hand-picked for the modern man
