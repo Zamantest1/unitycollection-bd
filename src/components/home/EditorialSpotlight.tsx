@@ -15,14 +15,14 @@ export function EditorialSpotlight() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.45 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-primary text-primary-foreground shadow-md"
+          className="relative overflow-hidden rounded-2xl bg-gradient-emerald-glow text-primary-foreground shadow-[0_20px_45px_-20px_rgba(11,58,52,0.55)] ring-1 ring-gold/15"
         >
           <div
             aria-hidden
-            className="absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none"
+            className="absolute inset-0 opacity-[0.07] pointer-events-none"
             style={{
               backgroundImage:
-                "radial-gradient(circle at 92% 50%, hsl(var(--gold)) 0, transparent 35%), radial-gradient(circle at 5% 80%, hsl(var(--gold)) 0, transparent 30%)",
+                "linear-gradient(120deg, transparent 60%, hsl(var(--gold)) 60%, hsl(var(--gold)) 60.6%, transparent 60.6%)",
             }}
           />
           <div className="relative flex flex-col md:flex-row items-center gap-4 md:gap-8 px-5 py-6 md:px-10 md:py-8">

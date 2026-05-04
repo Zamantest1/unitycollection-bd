@@ -18,6 +18,14 @@ function WhatsAppGlyph({ className = "h-6 w-6" }: { className?: string }) {
   );
 }
 
+/**
+ * Quiet floating WhatsApp button.
+ *
+ * Design intent: present but not attention-seeking. No pulse ring, no
+ * spring entrance, no desktop pill — just a small circular icon bubble
+ * with a soft neutral shadow and a gentle hover lift. The `#25D366`
+ * fill is kept so the icon is instantly recognizable as WhatsApp.
+ */
 export function FloatingWhatsApp() {
   const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}`;
 
@@ -26,23 +34,25 @@ export function FloatingWhatsApp() {
       href={whatsappLink}
       target="_blank"
       rel="noopener noreferrer"
-      // On mobile (where the BottomNav lives), float above the nav (~64px tall + safe-area).
-      // On desktop, sit at the standard 24px from the bottom-right.
-      className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] md:bottom-6 right-4 md:right-6 z-50 inline-flex items-center justify-center h-12 w-12 md:h-14 md:w-auto md:gap-2 md:px-4 md:py-3 rounded-full bg-[#25D366] text-white shadow-[0_10px_30px_-8px_rgba(37,211,102,0.55)] hover:bg-[#1DB954] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 transition-colors"
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      // On mobile (BottomNav present) sit above the nav with safe-area
+      // respect; on desktop park at a comfortable 24px corner offset.
+      className={[
+        "fixed bottom-[calc(72px+env(safe-area-inset-bottom))] md:bottom-6 right-4 md:right-6 z-40",
+        "inline-flex items-center justify-center h-11 w-11 md:h-12 md:w-12 rounded-full",
+        "bg-[#25D366] text-white",
+        "shadow-[0_4px_14px_-4px_rgba(0,0,0,0.18)] ring-1 ring-black/5",
+        "hover:shadow-[0_6px_18px_-6px_rgba(0,0,0,0.28)] hover:bg-[#1FBE5C]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2",
+        "transition-[box-shadow,background-color,transform] duration-200",
+      ].join(" ")}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.3, ease: "easeOut" }}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.96 }}
       aria-label="Chat with us on WhatsApp"
     >
-      <WhatsAppGlyph className="h-6 w-6 md:h-7 md:w-7" />
-      <span className="hidden md:inline font-medium text-sm">Chat with us</span>
-
-      {/* Pulse ring for attention; respects prefers-reduced-motion via global rule. */}
-      <span className="pointer-events-none absolute inset-0 rounded-full">
-        <span className="absolute inset-0 rounded-full bg-[#25D366] opacity-60 animate-ping" />
-      </span>
+      <WhatsAppGlyph className="h-5 w-5 md:h-6 md:w-6" />
     </motion.a>
   );
 }
