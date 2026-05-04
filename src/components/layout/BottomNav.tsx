@@ -1,23 +1,20 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, ShoppingBag, Truck, MessageCircle } from "lucide-react";
+import { Home, Search, ShoppingBag, Truck, LayoutGrid } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-
-const WHATSAPP_NUMBER = "8801880545357";
 
 interface NavItem {
   label: string;
   icon: typeof Home;
-  to?: string;
-  href?: string;
-  matches?: (path: string) => boolean;
+  to: string;
+  matches: (path: string) => boolean;
   badge?: number;
-  external?: boolean;
 }
 
 /**
  * Mobile bottom navigation — visible on screens < md.
- * 5 tabs: Home / Shop / Cart / Track / WhatsApp.
- * Replaces the floating WhatsApp bubble on mobile.
+ * 4 tabs: Home / Shop / Categories / Cart / Track.
+ * The WhatsApp bubble lives separately as a floating action button
+ * (see FloatingWhatsApp) so it never crowds the nav.
  */
 export function BottomNav() {
   const location = useLocation();
@@ -34,7 +31,13 @@ export function BottomNav() {
       label: "Shop",
       icon: Search,
       to: "/shop",
-      matches: (p) => p === "/shop" || p.startsWith("/categories"),
+      matches: (p) => p === "/shop",
+    },
+    {
+      label: "Categories",
+      icon: LayoutGrid,
+      to: "/categories",
+      matches: (p) => p.startsWith("/categories"),
     },
     {
       label: "Cart",
@@ -48,12 +51,6 @@ export function BottomNav() {
       icon: Truck,
       to: "/track",
       matches: (p) => p.startsWith("/track"),
-    },
-    {
-      label: "Chat",
-      icon: MessageCircle,
-      href: `https://wa.me/${WHATSAPP_NUMBER}`,
-      external: true,
     },
   ];
 
@@ -87,25 +84,13 @@ export function BottomNav() {
 
           return (
             <li key={item.label} className="relative">
-              {item.to ? (
-                <Link
-                  to={item.to}
-                  aria-current={active ? "page" : undefined}
-                  className="flex h-full w-full"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <a
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${item.label} on WhatsApp`}
-                  className="flex h-full w-full"
-                >
-                  {content}
-                </a>
-              )}
+              <Link
+                to={item.to}
+                aria-current={active ? "page" : undefined}
+                className="flex h-full w-full"
+              >
+                {content}
+              </Link>
             </li>
           );
         })}

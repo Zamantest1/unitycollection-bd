@@ -82,12 +82,54 @@
     --sidebar-border: 172 50% 20%;
     --sidebar-ring: 41 52% 55%;
 
-    /* Brand gradients (used by hero, marquee, cards, buttons) */
-    --gradient-primary: linear-gradient(135deg, hsl(172 67% 18%) 0%, hsl(172 68% 14%) 100%);
+    /* Brand gradients (used by hero, marquee, cards, buttons).
+       Multi-stop greens with subtle hue/luminance variation so they don't
+       read flat. All stops stay inside the brand palette: deep green
+       (#0F4D45 ≈ hsl(172 67% 18%)) and secondary green (#0B3A34 ≈
+       hsl(172 68% 14%)), with optional warm-gold luminance in conic
+       variants for hero / editorial. */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(172 65% 22%) 0%,
+      hsl(172 67% 18%) 35%,
+      hsl(172 68% 14%) 70%,
+      hsl(172 70% 11%) 100%
+    );
+    --gradient-deep-green: linear-gradient(
+      120deg,
+      hsl(172 68% 14%) 0%,
+      hsl(172 60% 20%) 50%,
+      hsl(172 70% 12%) 100%
+    );
+    --gradient-emerald-glow: radial-gradient(
+        circle at 85% 15%,
+        hsl(45 52% 60% / 0.18) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 12% 90%,
+        hsl(170 70% 25% / 0.45) 0%,
+        transparent 50%
+      ),
+      linear-gradient(
+        135deg,
+        hsl(172 68% 14%) 0%,
+        hsl(172 70% 11%) 100%
+      );
     --gradient-gold: linear-gradient(135deg, hsl(45 52% 78%) 0%, hsl(41 52% 55%) 100%);
     --gradient-gold-strong: linear-gradient(135deg, hsl(41 52% 55%) 0%, hsl(38 52% 45%) 100%);
-    --gradient-hero-overlay: linear-gradient(90deg, hsl(172 68% 14% / 0.85) 0%, hsl(172 68% 14% / 0.55) 45%, hsl(172 68% 14% / 0.15) 100%);
-    --gradient-section: linear-gradient(180deg, hsl(40 33% 96%) 0%, hsl(45 52% 78% / 0.18) 100%);
+    --gradient-hero-overlay: linear-gradient(
+      90deg,
+      hsl(172 68% 14% / 0.88) 0%,
+      hsl(172 67% 18% / 0.55) 45%,
+      hsl(172 68% 14% / 0.1) 100%
+    );
+    --gradient-section: linear-gradient(
+      180deg,
+      hsl(172 30% 96%) 0%,
+      hsl(40 33% 97%) 35%,
+      hsl(45 52% 78% / 0.22) 100%
+    );
   }
 }
 
@@ -163,6 +205,14 @@
   /* Brand gradient utilities */
   .bg-gradient-primary {
     background-image: var(--gradient-primary);
+  }
+
+  .bg-gradient-deep-green {
+    background-image: var(--gradient-deep-green);
+  }
+
+  .bg-gradient-emerald-glow {
+    background-image: var(--gradient-emerald-glow);
   }
 
   .bg-gradient-gold {
