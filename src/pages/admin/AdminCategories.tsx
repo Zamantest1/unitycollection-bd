@@ -10,6 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+
+interface CategoryRow {
+  id: string;
+  name: string;
+}
 
 const AdminCategories = () => {
   const { toast } = useToast();
@@ -18,6 +24,7 @@ const AdminCategories = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<CategoryRow | null>(null);
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["admin-categories"],
@@ -169,8 +176,9 @@ const AdminCategories = () => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => deleteMutation.mutate(category.id)}
-                    disabled={deleteMutation.isPending}
+                    onClick={() =>
+                      setPendingDelete({ id: category.id, name: category.name })
+                    }
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -184,6 +192,21 @@ const AdminCategories = () => {
           <p>No categories yet</p>
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete "${pendingDelete?.name}"?`}
+        description="Products in this category will need to be reassigned. This cannot be undone."
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteMutation.mutate(pendingDelete.id, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+      />
     </AdminLayout>
   );
 };

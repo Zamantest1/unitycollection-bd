@@ -12,12 +12,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+
+type CouponFilter = "all" | "active" | "inactive" | "expired";
+
+interface CouponRow {
+  id: string;
+  code: string;
+}
 
 const AdminCoupons = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CouponRow | null>(null);
+  const [filter, setFilter] = useState<CouponFilter>("all");
   const [form, setForm] = useState({
     code: "",
     discount_type: "fixed" as "fixed" | "percentage",
@@ -111,9 +121,35 @@ const AdminCoupons = () => {
     saveMutation.mutate();
   };
 
+  const filteredCoupons = coupons.filter((c) => {
+    const isExpired =
+      !!c.expiry_date && new Date(c.expiry_date) < new Date();
+    switch (filter) {
+      case "active":
+        return c.is_active && !isExpired;
+      case "inactive":
+        return !c.is_active;
+      case "expired":
+        return isExpired;
+      default:
+        return true;
+    }
+  });
+
   return (
     <AdminLayout title="Coupons">
-      <div className="flex justify-end mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <Select value={filter} onValueChange={(v) => setFilter(v as CouponFilter)}>
+          <SelectTrigger className="w-full md:w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All coupons</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+          </SelectContent>
+        </Select>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); else setIsDialogOpen(true); }}>
           <DialogTrigger asChild>
             <Button className="bg-primary text-primary-foreground hover:bg-gold hover:text-gold-foreground">
@@ -199,9 +235,12 @@ const AdminCoupons = () => {
             <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
-      ) : coupons.length > 0 ? (
+      ) : filteredCoupons.length > 0 ? (
         <div className="space-y-4">
-          {coupons.map((coupon) => (
+          {filteredCoupons.map((coupon) => {
+            const isExpired =
+              !!coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+            return (
             <Card key={coupon.id}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -209,6 +248,7 @@ const AdminCoupons = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-lg text-foreground">{coupon.code}</h3>
                       {!coupon.is_active && <Badge variant="destructive">Inactive</Badge>}
+                      {isExpired && <Badge variant="outline">Expired</Badge>}
                     </div>
                     <p className="text-gold font-medium">
                       {coupon.discount_type === "fixed" ? `৳${coupon.discount_value}` : `${coupon.discount_value}%`} off
@@ -225,8 +265,9 @@ const AdminCoupons = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => deleteMutation.mutate(coupon.id)}
-                      disabled={deleteMutation.isPending}
+                      onClick={() =>
+                        setPendingDelete({ id: coupon.id, code: coupon.code })
+                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -234,13 +275,29 @@ const AdminCoupons = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12 text-muted">
-          <p>No coupons yet</p>
+          <p>{coupons.length === 0 ? "No coupons yet" : "No coupons match this filter"}</p>
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete coupon "${pendingDelete?.code}"?`}
+        description='Customers using this code at checkout will get an "invalid coupon" error.'
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (pendingDelete) {
+            deleteMutation.mutate(pendingDelete.id, {
+              onSuccess: () => setPendingDelete(null),
+            });
+          }
+        }}
+      />
     </AdminLayout>
   );
 };

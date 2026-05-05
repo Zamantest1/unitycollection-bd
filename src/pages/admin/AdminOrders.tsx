@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Trash2, RotateCcw, Loader2, Download, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getDeliveryLabel, getStatusColor, getStatusLabel } from "@/lib/orderStatus";
 
 // NOTE:
 // - We allow filtering by "returned" so admins can find returned orders.
@@ -19,25 +20,14 @@ import { Badge } from "@/components/ui/badge";
 const filterStatusOptions = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
 const updateStatusOptions = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
-const getDeliveryLabel = (area: string) => {
-  switch (area) {
-    case "dhaka":
-    case "rajshahi":
-      return "Inside Rajshahi";
-    case "outside":
-    case "outside_rajshahi":
-      return "Outside Rajshahi";
-    default:
-      return area;
-  }
-};
-
 const AdminOrders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [referralFilter, setReferralFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [deleteOrder, setDeleteOrder] = useState<any>(null);
   const [returnOrder, setReturnOrder] = useState<any>(null);
@@ -245,11 +235,18 @@ const AdminOrders = () => {
       order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.phone.includes(searchQuery);
-    
+
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     const matchesReferral = !referralFilter || order.referral_code?.toLowerCase().includes(referralFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesReferral;
+    const created = order.created_at ? new Date(order.created_at).getTime() : 0;
+    const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+    const matchesDate =
+      (fromTs === null || created >= fromTs) &&
+      (toTs === null || created <= toTs);
+
+    return matchesSearch && matchesStatus && matchesReferral && matchesDate;
   });
 
   const downloadCustomerCSV = () => {
@@ -309,16 +306,56 @@ const AdminOrders = () => {
     toast({ title: `Downloaded ${customerMap.size} unique customers!` });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "confirmed": return "bg-blue-100 text-blue-800";
-      case "shipped": return "bg-purple-100 text-purple-800";
-      case "delivered": return "bg-green-100 text-green-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      case "returned": return "bg-orange-100 text-orange-800";
-      default: return "bg-gray-100 text-gray-800";
+  const downloadOrdersCSV = () => {
+    if (filteredOrders.length === 0) {
+      toast({ title: "No orders to export", variant: "destructive" });
+      return;
     }
+    const headers = [
+      "Order ID",
+      "Date",
+      "Customer",
+      "Phone",
+      "Address",
+      "Delivery",
+      "Status",
+      "Subtotal",
+      "Delivery charge",
+      "Discount",
+      "Total",
+      "Coupon",
+      "Referral",
+    ];
+    const escape = (v: unknown) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = filteredOrders.map((o) => [
+      o.order_id,
+      o.created_at ? new Date(o.created_at).toISOString() : "",
+      o.customer_name,
+      o.phone,
+      o.address,
+      getDeliveryLabel(o.delivery_area),
+      getStatusLabel(o.status),
+      o.subtotal ?? "",
+      o.delivery_charge ?? "",
+      o.discount_amount ?? "",
+      o.total ?? "",
+      o.coupon_code ?? "",
+      o.referral_code ?? "",
+    ].map(escape).join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: `Exported ${filteredOrders.length} orders` });
   };
 
   const parseItems = (items: any) => {
@@ -335,38 +372,81 @@ const AdminOrders = () => {
   return (
     <AdminLayout title="Orders">
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="space-y-3 mb-6">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by Order ID, name, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
           <Input
-            placeholder="Search by Order ID, name, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            placeholder="Filter by referral code..."
+            value={referralFilter}
+            onChange={(e) => setReferralFilter(e.target.value)}
+            className="w-full md:w-48"
           />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              {filterStatusOptions.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status === "all" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Input
-          placeholder="Filter by referral code..."
-          value={referralFilter}
-          onChange={(e) => setReferralFilter(e.target.value)}
-          className="w-full md:w-48"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            {filterStatusOptions.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status === "all" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button variant="outline" onClick={downloadCustomerCSV} className="w-full md:w-auto">
-          <Download className="h-4 w-4 mr-2" />
-          Download Customers
-        </Button>
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+          <div className="flex items-center gap-2 flex-1">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">From</Label>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-9"
+            />
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">To</Label>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-9"
+            />
+            {(dateFrom || dateTo) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="h-9"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={downloadOrdersCSV} className="flex-1 md:flex-none">
+              <Download className="h-4 w-4 mr-2" />
+              Export Orders
+            </Button>
+            <Button variant="outline" onClick={downloadCustomerCSV} className="flex-1 md:flex-none">
+              <Download className="h-4 w-4 mr-2" />
+              Customers
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Showing <span className="font-medium text-foreground">{filteredOrders.length}</span> of {orders.length} orders
+        </p>
       </div>
 
       {/* Orders List */}

@@ -43,15 +43,21 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Generic message for any auth/role failure: never reveal whether an
+    // email exists in auth.users or whether it has the admin role. This
+    // closes an enumeration vector on the admin login page.
+    const GENERIC_ERROR = "Invalid email or password.";
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error || !data?.user) {
+        throw new Error(GENERIC_ERROR);
+      }
 
-      // Check if user is admin
       const { data: role, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
@@ -59,11 +65,9 @@ const AdminLogin = () => {
         .eq("role", "admin")
         .maybeSingle();
 
-      if (roleError) throw roleError;
-
-      if (!role) {
+      if (roleError || !role) {
         await supabase.auth.signOut();
-        throw new Error("Access denied. Admin privileges required.");
+        throw new Error(GENERIC_ERROR);
       }
 
       toast({
@@ -72,10 +76,11 @@ const AdminLogin = () => {
       });
 
       navigate("/admin");
-    } catch (error: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : GENERIC_ERROR;
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
