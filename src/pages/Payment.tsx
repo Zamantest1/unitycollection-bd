@@ -308,22 +308,25 @@ export default function Payment() {
     },
   });
 
-  // Back-button intercept state. Populated by useBackInterceptor
-  // (defined below) when the user presses Back. We hold the "release"
-  // callback so a Yes-click on the dialog can actually leave the page.
+  // Back-button intercept state. The interceptor only arms when
+  // the user is on the *method selector* screen — once they've
+  // picked a method, Back should silently take them back to the
+  // selector so they can change methods without seeing a popup.
   const [cancelOpen, setCancelOpen] = useState(false);
-  const releaseRef = useRef<(() => void) | null>(null);
 
-  // Disable the intercept once the customer has actually submitted
+  // Only intercept Back when leaving /payment is the *real*
+  // navigation target. That happens on the method selector, not on
+  // a method-specific form (where Back goes to the selector
+  // naturally). Also disabled once the customer has submitted
   // payment — at that point Back should just navigate normally.
   const interceptActive =
     !!orderId &&
+    !methodParam &&
     !submitted &&
     !cancelOrder.isPending &&
     order?.status === "pending";
 
-  useBackInterceptor(interceptActive, (release) => {
-    releaseRef.current = release;
+  useBackInterceptor(interceptActive, () => {
     setCancelOpen(true);
   });
 
@@ -340,17 +343,13 @@ export default function Payment() {
       toast.error((err as Error).message || "Could not cancel order");
     } finally {
       setCancelOpen(false);
-      // Release the back-button trap and let the natural back happen.
-      const release = releaseRef.current;
-      releaseRef.current = null;
-      if (release) release();
-      else navigate("/", { replace: true });
+      // Replace, so a forward-Back doesn't return them to /payment.
+      navigate("/", { replace: true });
     }
   };
 
   const handleStay = () => {
     setCancelOpen(false);
-    releaseRef.current = null;
     // The interceptor has already re-armed itself, so doing nothing
     // keeps the user on /payment.
   };
