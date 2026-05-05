@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useBackInterceptor } from "@/hooks/useBackInterceptor";
 import { toast } from "sonner";
 
 const WHATSAPP_NUMBER = "8801880545357";
@@ -174,13 +185,64 @@ export default function Payment() {
   const method = methodParam && methodParam in methodMap ? methodParam : null;
   const selectedConfig = method ? methodMap[method] : null;
 
-  // Form state for the method-specific page
+  // Form state for the method-specific page. Hydrated from localStorage
+  // on mount so refresh / accidental close doesn't lose the customer's
+  // typing.
+  const storageKey = orderId ? `unity:payment:${orderId}` : null;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const hydratedRef = useRef(false);
 
-  // Reset form / submission state when method changes
+  // One-shot hydrate.
+  useEffect(() => {
+    if (!storageKey || hydratedRef.current) return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          name?: string;
+          phone?: string;
+          trxId?: string;
+          method?: string;
+        };
+        if (parsed.name) setName(parsed.name);
+        if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.trxId) setTrxId(parsed.trxId);
+        // If they had a method picked previously and the URL doesn't
+        // already point at one, restore it so they land back on the
+        // same screen they left.
+        if (
+          parsed.method &&
+          !methodParam &&
+          parsed.method in (methodMap || {})
+        ) {
+          navigate(`/payment/${orderId}/${parsed.method}`, { replace: true });
+        }
+      }
+    } catch {
+      // ignore corrupt JSON
+    }
+    hydratedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, methodMap]);
+
+  // Persist any later edits.
+  useEffect(() => {
+    if (!storageKey || !hydratedRef.current) return;
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ name, phone, trxId, method: methodParam ?? null }),
+      );
+    } catch {
+      // quota / private mode — silently ignore
+    }
+  }, [storageKey, name, phone, trxId, methodParam]);
+
+  // Reset form / submission state when method changes (but not the
+  // saved name / phone — those are stable across method choices).
   useEffect(() => {
     setSubmitted(false);
     setTrxId("");
@@ -228,6 +290,103 @@ export default function Payment() {
       toast.error(err.message || "Could not submit payment");
     },
   });
+
+  const cancelOrder = useMutation({
+    mutationFn: async () => {
+      if (!orderId) throw new Error("Missing order id");
+      // RPC defined in 20260507000000_abandoned_order_recovery.sql.
+      // Idempotent + safe: refuses if a payment has been verified.
+      const { data, error } = await supabase.rpc("cancel_pending_order", {
+        p_order_id: orderId,
+        p_reason: "customer_back_out",
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as
+        | { cancelled: boolean; status: string | null; message: string }
+        | null;
+    },
+  });
+
+  // Back-button intercept state. Populated by useBackInterceptor
+  // (defined below) when the user presses Back. We hold the "release"
+  // callback so a Yes-click on the dialog can actually leave the page.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const releaseRef = useRef<(() => void) | null>(null);
+
+  // Disable the intercept once the customer has actually submitted
+  // payment — at that point Back should just navigate normally.
+  const interceptActive =
+    !!orderId &&
+    !submitted &&
+    !cancelOrder.isPending &&
+    order?.status === "pending";
+
+  useBackInterceptor(interceptActive, (release) => {
+    releaseRef.current = release;
+    setCancelOpen(true);
+  });
+
+  const handleConfirmCancel = async () => {
+    try {
+      const result = await cancelOrder.mutateAsync();
+      if (storageKey) window.localStorage.removeItem(storageKey);
+      if (result && result.cancelled) {
+        toast.success("Order cancelled");
+      } else if (result?.message) {
+        toast.message(result.message);
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Could not cancel order");
+    } finally {
+      setCancelOpen(false);
+      // Release the back-button trap and let the natural back happen.
+      const release = releaseRef.current;
+      releaseRef.current = null;
+      if (release) release();
+      else navigate("/", { replace: true });
+    }
+  };
+
+  const handleStay = () => {
+    setCancelOpen(false);
+    releaseRef.current = null;
+    // The interceptor has already re-armed itself, so doing nothing
+    // keeps the user on /payment.
+  };
+
+  // Renders through Radix's portal, so it floats above whichever
+  // /payment screen is currently active.
+  const cancelDialogJsx = (
+    <AlertDialog open={cancelOpen} onOpenChange={(o) => !o && handleStay()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure you want to cancel this order?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You can place a new order from the shop anytime.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleStay} disabled={cancelOrder.isPending}>
+            No, keep order
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              handleConfirmCancel();
+            }}
+            disabled={cancelOrder.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {cancelOrder.isPending && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            Yes, cancel
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   const copyNumber = async (n: string) => {
     try {
@@ -469,6 +628,15 @@ export default function Payment() {
           amount,
         });
         setSubmitted(true);
+        // Customer has paid — drop the saved form draft so the next
+        // visit starts clean.
+        if (storageKey) {
+          try {
+            window.localStorage.removeItem(storageKey);
+          } catch {
+            /* ignore */
+          }
+        }
       } catch {
         // Toast already shown by onError handler.
       }
@@ -654,6 +822,7 @@ export default function Payment() {
             </motion.div>
           </div>
         </div>
+        {cancelDialogJsx}
       </Layout>
     );
   }
@@ -850,6 +1019,7 @@ export default function Payment() {
           </p>
         </div>
       </div>
+      {cancelDialogJsx}
     </Layout>
   );
 }
