@@ -16,6 +16,7 @@ import {
   X,
   CreditCard,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/admin", icon: LayoutDashboard, group: "Overview" },
   { name: "Orders", path: "/admin/orders", icon: ShoppingCart, group: "Overview" },
+  { name: "Abandoned", path: "/admin/abandoned", icon: Clock, group: "Overview" },
   { name: "Products", path: "/admin/products", icon: Package, group: "Catalog" },
   { name: "Categories", path: "/admin/categories", icon: FolderOpen, group: "Catalog" },
   { name: "Banners", path: "/admin/banners", icon: ImageIcon, group: "Catalog" },
