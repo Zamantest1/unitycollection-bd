@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle, Loader2, Tag, Check, X, Users } from "lucide-react";
+import { Loader2, Tag, Check, X, Users, Truck } from "lucide-react";
 
 const orderSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -35,10 +36,9 @@ interface OrderFormProps {
   };
 }
 
-const WHATSAPP_NUMBER = "8801880545357";
-
 export function OrderForm({ product }: OrderFormProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -203,33 +203,11 @@ export function OrderForm({ product }: OrderFormProps) {
       };
     },
     onSuccess: (order) => {
-      // Generate WhatsApp message
-      const trackingUrl = `${window.location.origin}/track/${order.order_id}`;
-      const message = encodeURIComponent(
-        `🛍️ *New Order from Unity Collection*\n\n` +
-        `📋 *Order ID:* ${order.order_id}\n` +
-        `🔗 *Track Order:* ${trackingUrl}\n` +
-        `👤 *Name:* ${order.customer_name}\n` +
-        `📞 *Phone:* ${order.phone}\n` +
-        `📍 *Address:* ${order.address}\n` +
-        `🚚 *Delivery:* ${order.delivery_area === "rajshahi" ? "Inside Rajshahi" : "Outside Rajshahi"}\n\n` +
-        `🛒 *Product:*\n` +
-        `• ${product.name}${product.size ? ` (Size: ${product.size})` : ""} - Tk.${product.price}\n\n` +
-        `💰 *Subtotal:* Tk.${subtotal}\n` +
-        `🚚 *Delivery:* Tk.${deliveryCharge}\n` +
-        (discount > 0 ? `🎟️ *Discount:* -Tk.${discount}\n` : "") +
-        (validatedReferral ? `👥 *Referral:* ${validatedReferral}\n` : "") +
-        `✅ *Total:* Tk.${total}\n\n` +
-        `🔗 *Product Link:* ${window.location.href}`
-      );
-
-      // Redirect to WhatsApp
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
-
       toast({
         title: "Order Placed!",
-        description: `Order ID: ${order.order_id}. Track at /track/${order.order_id}`,
+        description: `Order ID: ${order.order_id}. Continuing to payment…`,
       });
+      navigate(`/payment/${order.order_id}`);
     },
     onError: (error: Error) => {
       toast({
@@ -278,7 +256,7 @@ export function OrderForm({ product }: OrderFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 border-t border-border pt-6">
       <h3 className="font-display text-xl font-semibold text-foreground">
-        Order via WhatsApp
+        Order now
       </h3>
 
       {/* Customer Name */}
@@ -462,9 +440,9 @@ export function OrderForm({ product }: OrderFormProps) {
         {createOrder.isPending ? (
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
         ) : (
-          <MessageCircle className="h-5 w-5 mr-2" />
+          <Truck className="h-5 w-5 mr-2" />
         )}
-        Order via WhatsApp
+        Place order · ৳{total.toLocaleString()}
       </Button>
     </form>
   );

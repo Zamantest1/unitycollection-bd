@@ -37,12 +37,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, CreditCard } from "lucide-react";
 
 type MethodType = "Send Money" | "Payment";
+type PaymentType = "advance_delivery" | "full_payment";
 
 interface PaymentMethod {
   id: string;
   key: string;
   name: string;
   type: string;
+  payment_type: string | null;
   account_number: string;
   instructions: string | null;
   is_active: boolean | null;
@@ -53,6 +55,7 @@ interface MethodForm {
   key: string;
   name: string;
   type: MethodType;
+  payment_type: PaymentType;
   account_number: string;
   instructions: string;
   is_active: boolean;
@@ -63,6 +66,7 @@ const emptyForm: MethodForm = {
   key: "",
   name: "",
   type: "Send Money",
+  payment_type: "advance_delivery",
   account_number: "",
   instructions: "",
   is_active: true,
@@ -91,30 +95,26 @@ const AdminPaymentMethods = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const payload = {
+        key: form.key.trim().toLowerCase(),
+        name: form.name.trim(),
+        type: form.type,
+        payment_type: form.payment_type,
+        account_number: form.account_number.trim(),
+        instructions: form.instructions.trim() || null,
+        is_active: form.is_active,
+        display_order: form.display_order,
+      };
       if (editingId) {
         const { error } = await supabase
           .from("payment_methods")
-          .update({
-            key: form.key.trim().toLowerCase(),
-            name: form.name.trim(),
-            type: form.type,
-            account_number: form.account_number.trim(),
-            instructions: form.instructions.trim() || null,
-            is_active: form.is_active,
-            display_order: form.display_order,
-          })
+          .update(payload)
           .eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("payment_methods").insert({
-          key: form.key.trim().toLowerCase(),
-          name: form.name.trim(),
-          type: form.type,
-          account_number: form.account_number.trim(),
-          instructions: form.instructions.trim() || null,
-          is_active: form.is_active,
-          display_order: form.display_order,
-        });
+        const { error } = await supabase
+          .from("payment_methods")
+          .insert(payload);
         if (error) throw error;
       }
     },
@@ -167,6 +167,10 @@ const AdminPaymentMethods = () => {
       key: m.key,
       name: m.name,
       type: (m.type === "Payment" ? "Payment" : "Send Money") as MethodType,
+      payment_type:
+        m.payment_type === "advance_delivery"
+          ? "advance_delivery"
+          : "full_payment",
       account_number: m.account_number,
       instructions: m.instructions ?? "",
       is_active: m.is_active ?? true,
@@ -286,6 +290,52 @@ const AdminPaymentMethods = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Customer pays *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(
+                    [
+                      {
+                        value: "advance_delivery" as PaymentType,
+                        title: "Only delivery charge",
+                        sub: "Cash on delivery for the rest",
+                      },
+                      {
+                        value: "full_payment" as PaymentType,
+                        title: "Full order amount",
+                        sub: "Customer prepays everything",
+                      },
+                    ]
+                  ).map((opt) => {
+                    const active = form.payment_type === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          setForm({ ...form, payment_type: opt.value })
+                        }
+                        className={`text-left rounded-lg border p-3 transition-colors ${
+                          active
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-foreground">
+                          {opt.title}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {opt.sub}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  This decides how much the customer is asked to pay when they
+                  pick this method on checkout.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label>Instructions</Label>
                 <Textarea
                   value={form.instructions}
@@ -343,6 +393,17 @@ const AdminPaymentMethods = () => {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-bold text-foreground">{m.name}</h3>
                       <Badge variant="outline">{m.type}</Badge>
+                      <Badge
+                        className={
+                          m.payment_type === "advance_delivery"
+                            ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                            : "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                        }
+                      >
+                        {m.payment_type === "advance_delivery"
+                          ? "Delivery only"
+                          : "Full payment"}
+                      </Badge>
                       <Badge variant={m.is_active ? "default" : "secondary"}>
                         {m.is_active ? "Active" : "Inactive"}
                       </Badge>

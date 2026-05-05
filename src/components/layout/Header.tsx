@@ -28,14 +28,14 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo & Brand Name */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2.5 md:gap-3 group min-w-0">
             <img
               src={LOGO_URL}
               alt="Unity Collection"
-              className="h-10 md:h-14 w-auto"
+              className="h-9 md:h-14 w-auto shrink-0"
             />
-            <div className="hidden sm:block leading-tight">
-              <span className="block font-display text-base md:text-xl font-semibold text-primary-foreground tracking-wide group-hover:text-gold transition-colors">
+            <div className="leading-tight min-w-0">
+              <span className="block font-display text-[15px] md:text-xl font-semibold text-primary-foreground tracking-wide group-hover:text-gold transition-colors truncate">
                 Unity Collection
               </span>
               <span className="hidden md:block text-[10px] uppercase tracking-[0.18em] text-gold/90">

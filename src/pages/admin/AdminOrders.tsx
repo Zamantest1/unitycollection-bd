@@ -12,7 +12,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Trash2, RotateCcw, Loader2, Download, Pencil, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getDeliveryLabel, getStatusColor, getStatusLabel } from "@/lib/orderStatus";
+import {
+  getDeliveryLabel,
+  getStatusColor,
+  getStatusLabel,
+  getPaymentStatusColor,
+  getPaymentStatusLabel,
+} from "@/lib/orderStatus";
 
 // NOTE:
 // - We allow filtering by "returned" so admins can find returned orders.
@@ -465,6 +471,7 @@ const AdminOrders = () => {
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground">Order</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground hidden md:table-cell">Customer</th>
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground">Total</th>
+                  <th className="text-center px-3 py-2 font-medium text-muted-foreground hidden lg:table-cell">Payment</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">Status</th>
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground">Actions</th>
                 </tr>
@@ -486,6 +493,14 @@ const AdminOrders = () => {
                       {order.discount_amount > 0 && (
                         <div className="text-xs text-muted-foreground">-৳{order.discount_amount}</div>
                       )}
+                    </td>
+                    <td className="px-3 py-2 text-center hidden lg:table-cell">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-medium border-0 ${getPaymentStatusColor(order.payment_status)}`}
+                      >
+                        {getPaymentStatusLabel(order.payment_status)}
+                      </Badge>
                     </td>
                     <td className="px-3 py-2 text-center">
                       <Select

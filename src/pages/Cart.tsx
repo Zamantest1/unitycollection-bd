@@ -20,7 +20,6 @@ import {
   Minus,
   ShoppingBag,
   ArrowLeft,
-  MessageCircle,
   Loader2,
   Tag,
   Check,
@@ -55,8 +54,6 @@ interface Member {
   discount_type: string;
   total_purchases: number;
 }
-
-const WHATSAPP_NUMBER = "8801880545357";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, subtotal, itemCount } = useCart();
@@ -310,36 +307,6 @@ const Cart = () => {
           console.error("Auto-membership check error:", err);
         }
       }
-
-      const itemsList = items
-        .map(
-          (item) =>
-            `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} - Tk.${
-              item.price * item.quantity
-            }`,
-        )
-        .join("\n");
-
-      const trackingUrl = `${window.location.origin}/track/${order.order_id}`;
-      const message = encodeURIComponent(
-        `🛍️ *New Order from Unity Collection*\n\n` +
-          `📋 *Order ID:* ${order.order_id}\n` +
-          `🔗 *Track Order:* ${trackingUrl}\n` +
-          `👤 *Name:* ${order.customer_name}\n` +
-          `📞 *Phone:* ${order.phone}\n` +
-          `📍 *Address:* ${order.address}\n` +
-          `🚚 *Delivery:* ${
-            order.delivery_area === "dhaka" ? "Inside Rajshahi" : "Outside Rajshahi"
-          }\n\n` +
-          `🛒 *Products:*\n${itemsList}\n\n` +
-          `💰 *Subtotal:* Tk.${subtotal}\n` +
-          `🚚 *Delivery:* Tk.${deliveryCharge}\n` +
-          (totalDiscount > 0 ? `🎟️ *Discount:* -Tk.${totalDiscount}\n` : "") +
-          (validatedReferral ? `👥 *Referral:* ${validatedReferral}\n` : "") +
-          `✅ *Total:* Tk.${total}`,
-      );
-
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
 
       toast({
         title: "Order Placed!",
@@ -752,7 +719,7 @@ const Cart = () => {
                     Delivery details
                   </h2>
                   <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                    We&apos;ll confirm your order on WhatsApp.
+                    Continue to payment after placing the order.
                   </p>
                 </header>
 
@@ -910,8 +877,7 @@ const Cart = () => {
                       Place order · ৳{total.toLocaleString()}
                     </Button>
                     <p className="text-[11px] text-center text-muted-foreground mt-2">
-                      You&apos;ll be sent to WhatsApp to confirm. Pay on delivery, no
-                      charges yet.
+                      You&apos;ll continue to the payment page after placing the order.
                     </p>
                   </div>
                 </div>

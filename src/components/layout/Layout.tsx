@@ -9,9 +9,19 @@ import { BottomNav } from "./BottomNav";
 interface LayoutProps {
   children: ReactNode;
   showNotice?: boolean;
+  /**
+   * When true, the global brand header + notice bar are hidden. Used by
+   * the payment flow so its own gradient header isn't stacked on top of
+   * the global header. Bottom-nav and footer still render.
+   */
+  hideHeader?: boolean;
 }
 
-export function Layout({ children, showNotice = true }: LayoutProps) {
+export function Layout({
+  children,
+  showNotice = true,
+  hideHeader = false,
+}: LayoutProps) {
   const location = useLocation();
   // Hide the floating WhatsApp on /cart and /payment so it doesn't
   // overlap the checkout form / payment submission flow.
@@ -21,8 +31,8 @@ export function Layout({ children, showNotice = true }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {showNotice && <NoticeBar />}
-      <Header />
+      {!hideHeader && showNotice && <NoticeBar />}
+      {!hideHeader && <Header />}
       {/* Pad bottom on mobile so the BottomNav doesn't cover content */}
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <Footer />

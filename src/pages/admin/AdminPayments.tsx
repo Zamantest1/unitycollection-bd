@@ -93,25 +93,30 @@ const AdminPayments = () => {
     },
   });
 
+  // Goes through the verify_payment_submission RPC so that, on
+  // status='verified', the matching order's payment_status is bumped
+  // to 'delivery_paid' or 'fully_paid' (depending on the method's
+  // payment_type). Falling back to plain UPDATE would leave the order
+  // out of sync, which is the bug this RPC exists to prevent.
   const updateMutation = useMutation({
     mutationFn: async (params: {
       id: string;
       status: SubmissionStatus;
       admin_note: string;
     }) => {
-      const { error } = await supabase
-        .from("payment_submissions")
-        .update({
-          status: params.status,
-          admin_note: params.admin_note || null,
-        })
-        .eq("id", params.id);
+      const { error } = await supabase.rpc("verify_payment_submission", {
+        p_submission_id: params.id,
+        p_status: params.status,
+        p_admin_note: params.admin_note || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["admin-payment-submissions"],
       });
+      // Order list shows payment_status badge → keep them in sync.
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast({ title: "Submission updated" });
       setEditing(null);
     },
