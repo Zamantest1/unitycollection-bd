@@ -276,3 +276,37 @@
     }
   }
 }
+
+/* Tiptap placeholder + base spacing */
+@layer components {
+  .tiptap-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+    height: 0;
+  }
+  .tiptap-editor:focus-within {
+    outline: none;
+  }
+  .tiptap-editor h2 {
+    font-weight: 700;
+    margin-top: 0.5em;
+    margin-bottom: 0.25em;
+  }
+  .tiptap-editor h3 {
+    font-weight: 600;
+    margin-top: 0.5em;
+    margin-bottom: 0.25em;
+  }
+  .tiptap-editor ul,
+  .tiptap-editor ol {
+    padding-left: 1.25em;
+  }
+  .tiptap-editor blockquote {
+    border-left: 3px solid hsl(var(--border));
+    padding-left: 0.75em;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+}

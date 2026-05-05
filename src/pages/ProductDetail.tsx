@@ -32,6 +32,12 @@ interface ProductRow {
   image_urls: string[] | null;
   product_code: string;
   sizes: string[] | null;
+  /**
+   * Per-size inventory map. Empty when product has no size variants.
+   * Used to show which sizes are sold-out on the size selector.
+   */
+  size_stock: Record<string, number> | null;
+  size_guide_url: string | null;
   stock_quantity: number;
   categories: { name: string } | null;
 }
@@ -41,6 +47,7 @@ const ProductDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const { data: product, isLoading } = useQuery<ProductRow | null>({
     queryKey: ["product", id],
@@ -293,9 +300,17 @@ const ProductDetail = () => {
                   <h3 className="font-display font-semibold text-foreground mb-1.5">
                     Description
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                    {product.description}
-                  </p>
+                  {/* Admin authors via Tiptap rich-text editor; values are
+                      always wrapped in <p> / list / heading tags so plain
+                      legacy strings still render reasonably here. */}
+                  <div
+                    className="prose prose-sm md:prose-base max-w-none text-muted-foreground leading-relaxed [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_h2]:text-foreground [&_h3]:text-foreground [&_strong]:text-foreground"
+                    dangerouslySetInnerHTML={{
+                      __html: /<\/?[a-z][\s\S]*>/i.test(product.description)
+                        ? product.description
+                        : `<p>${product.description.replace(/\n/g, "<br/>")}</p>`,
+                    }}
+                  />
                 </div>
               )}
 
@@ -306,30 +321,62 @@ const ProductDetail = () => {
                     <h3 className="font-display font-semibold text-foreground">
                       Select size
                     </h3>
-                    <Link
-                      to="/contact"
-                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-                    >
-                      Size guide
-                    </Link>
+                    {product.size_guide_url ? (
+                      <button
+                        type="button"
+                        onClick={() => setSizeGuideOpen(true)}
+                        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                      >
+                        Size guide
+                      </button>
+                    ) : (
+                      <Link
+                        to="/contact"
+                        className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                      >
+                        Size guide
+                      </Link>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        disabled={isOutOfStock}
-                        className={`min-w-12 h-11 px-4 rounded-full border-2 font-medium text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
-                          selectedSize === size
-                            ? "border-gold bg-gold text-gold-foreground shadow-sm"
-                            : isOutOfStock
-                              ? "border-border opacity-50 cursor-not-allowed"
-                              : "border-border hover:border-gold"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {sizes.map((size) => {
+                      const sizeMap = product.size_stock || {};
+                      const hasSizeMap = Object.keys(sizeMap).length > 0;
+                      const sizeStock = hasSizeMap
+                        ? Number(sizeMap[size] ?? 0)
+                        : stockQuantity;
+                      const sizeOut = sizeStock <= 0;
+                      const sizeLow = sizeStock > 0 && sizeStock <= 2;
+                      const disabled = isOutOfStock || sizeOut;
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => !disabled && setSelectedSize(size)}
+                          disabled={disabled}
+                          title={
+                            sizeOut
+                              ? `${size} is out of stock`
+                              : sizeLow
+                                ? `Only ${sizeStock} left in ${size}`
+                                : undefined
+                          }
+                          className={`relative min-w-12 h-11 px-4 rounded-full border-2 font-medium text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+                            selectedSize === size
+                              ? "border-gold bg-gold text-gold-foreground shadow-sm"
+                              : disabled
+                                ? "border-border opacity-50 line-through cursor-not-allowed"
+                                : "border-border hover:border-gold"
+                          }`}
+                        >
+                          {size}
+                          {!disabled && sizeLow && (
+                            <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-semibold text-destructive-foreground">
+                              {sizeStock}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -493,6 +540,21 @@ const ProductDetail = () => {
                   {currentImage + 1} / {images.length}
                 </div>
               </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Size guide modal */}
+      <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <div className="bg-white p-2">
+            {product.size_guide_url && (
+              <img
+                src={product.size_guide_url}
+                alt={`${product.name} — size guide`}
+                className="w-full h-auto rounded"
+              />
             )}
           </div>
         </DialogContent>
