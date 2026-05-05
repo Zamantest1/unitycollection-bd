@@ -70,3 +70,54 @@ export const getDeliveryLabel = (area: string | null | undefined): string => {
       return area ?? "—";
   }
 };
+
+/**
+ * Payment-status presentation helpers — mirrors orders.payment_status.
+ * - unpaid: nothing has been received yet
+ * - delivery_paid: customer prepaid the delivery charge (advance_delivery flow)
+ * - fully_paid: customer prepaid the entire order (full_payment flow)
+ * - refunded: payment was reversed
+ */
+export type PaymentStatus =
+  | "unpaid"
+  | "delivery_paid"
+  | "fully_paid"
+  | "refunded";
+
+const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
+  unpaid: "bg-gray-100 text-gray-700",
+  delivery_paid: "bg-amber-100 text-amber-800",
+  fully_paid: "bg-emerald-100 text-emerald-800",
+  refunded: "bg-rose-100 text-rose-800",
+};
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  unpaid: "Unpaid",
+  delivery_paid: "Delivery paid",
+  fully_paid: "Fully paid",
+  refunded: "Refunded",
+};
+
+const isPaymentStatus = (s: string): s is PaymentStatus =>
+  s === "unpaid" ||
+  s === "delivery_paid" ||
+  s === "fully_paid" ||
+  s === "refunded";
+
+export const getPaymentStatusColor = (
+  status: string | null | undefined,
+): string => {
+  if (!status) return PAYMENT_STATUS_COLORS.unpaid;
+  return isPaymentStatus(status)
+    ? PAYMENT_STATUS_COLORS[status]
+    : "bg-gray-100 text-gray-700";
+};
+
+export const getPaymentStatusLabel = (
+  status: string | null | undefined,
+): string => {
+  if (!status) return PAYMENT_STATUS_LABELS.unpaid;
+  return isPaymentStatus(status)
+    ? PAYMENT_STATUS_LABELS[status]
+    : status.charAt(0).toUpperCase() + status.slice(1);
+};

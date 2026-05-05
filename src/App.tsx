@@ -25,6 +25,7 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
+import AdminStorefront from "./pages/admin/AdminStorefront";
 import Track from "./pages/Track";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
@@ -72,6 +73,7 @@ const App = () => (
                 path="/admin/payment-methods"
                 element={<AdminPaymentMethods />}
               />
+              <Route path="/admin/storefront" element={<AdminStorefront />} />
             </Route>
 
             {/* Catch-all */}

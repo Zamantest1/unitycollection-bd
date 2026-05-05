@@ -11,27 +11,10 @@ import {
   TrendingUp,
   Warehouse,
   Percent,
-  Eye,
-  Users,
-  CalendarDays,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getStatusColor, getStatusLabel } from "@/lib/orderStatus";
-
-interface VisitStats {
-  visits_today: number;
-  visits_7d: number;
-  visits_30d: number;
-  unique_visitors_today: number;
-  unique_visitors_7d: number;
-  unique_visitors_30d: number;
-}
-
-interface TopPage {
-  path: string;
-  views: number;
-  unique_visitors: number;
-}
+import { VisitorInsights } from "@/components/admin/VisitorInsights";
 
 const AdminDashboard = () => {
   const { data: stats } = useQuery({
@@ -90,31 +73,6 @@ const AdminDashboard = () => {
     },
   });
 
-  // Visitor analytics — backed by RPCs that aggregate the page_views table.
-  // The RPCs are SECURITY DEFINER and only return data when the caller is
-  // an admin, so this query simply renders nothing if the user isn't.
-  const { data: visitStats } = useQuery<VisitStats | null>({
-    queryKey: ["admin-visit-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_visit_stats");
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      return (row as VisitStats) ?? null;
-    },
-  });
-
-  const { data: topPages = [] } = useQuery<TopPage[]>({
-    queryKey: ["admin-top-pages"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_top_pages", {
-        p_days: 7,
-        p_limit: 5,
-      });
-      if (error) throw error;
-      return (data ?? []) as TopPage[];
-    },
-  });
-
   const statCards = [
     { title: "Products", value: stats?.products || 0, icon: Package, link: "/admin/products", color: "text-primary" },
     { title: "Orders", value: stats?.orders || 0, icon: ShoppingCart, link: "/admin/orders", color: "text-gold" },
@@ -167,91 +125,8 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Visitor Analytics */}
-      {visitStats && (
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
-                Visitor Analytics
-              </CardTitle>
-              <p className="text-xs text-muted mt-1">
-                Storefront page views — admin pages excluded
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-xs text-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Today
-                </div>
-                <div className="mt-2 text-2xl font-bold text-foreground">
-                  {visitStats.visits_today}
-                </div>
-                <div className="text-xs text-muted flex items-center gap-1 mt-1">
-                  <Users className="h-3 w-3" />
-                  {visitStats.unique_visitors_today} unique
-                </div>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-xs text-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Last 7 days
-                </div>
-                <div className="mt-2 text-2xl font-bold text-foreground">
-                  {visitStats.visits_7d}
-                </div>
-                <div className="text-xs text-muted flex items-center gap-1 mt-1">
-                  <Users className="h-3 w-3" />
-                  {visitStats.unique_visitors_7d} unique
-                </div>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-xs text-muted">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Last 30 days
-                </div>
-                <div className="mt-2 text-2xl font-bold text-foreground">
-                  {visitStats.visits_30d}
-                </div>
-                <div className="text-xs text-muted flex items-center gap-1 mt-1">
-                  <Users className="h-3 w-3" />
-                  {visitStats.unique_visitors_30d} unique
-                </div>
-              </div>
-            </div>
-
-            {topPages.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Top pages · last 7 days
-                </h3>
-                <div className="space-y-2">
-                  {topPages.map((p) => (
-                    <div
-                      key={p.path}
-                      className="flex items-center justify-between text-sm border-b border-border last:border-0 pb-2 last:pb-0"
-                    >
-                      <span className="font-mono text-foreground truncate max-w-[60%]">
-                        {p.path}
-                      </span>
-                      <span className="text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {p.views}
-                        </span>{" "}
-                        views · {p.unique_visitors} unique
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Visitor Insights */}
+      <VisitorInsights />
 
       {/* Recent Orders */}
       <Card>

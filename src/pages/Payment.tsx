@@ -70,16 +70,20 @@ interface PaymentMethodRow {
   key: string;
   name: string;
   type: string;
+  payment_type: string | null;
   account_number: string;
   instructions: string | null;
   is_active: boolean | null;
   display_order: number | null;
 }
 
+type PaymentType = "advance_delivery" | "full_payment";
+
 interface MethodConfig {
   key: string;
   name: string;
   type: "Send Money" | "Payment";
+  paymentType: PaymentType;
   number: string;
   color: string;
   colorDark: string;
@@ -94,6 +98,10 @@ const toMethodConfig = (row: PaymentMethodRow): MethodConfig => {
     key: row.key,
     name: row.name,
     type: row.type === "Payment" ? "Payment" : "Send Money",
+    paymentType:
+      row.payment_type === "advance_delivery"
+        ? "advance_delivery"
+        : "full_payment",
     number: row.account_number,
     color: style.color,
     colorDark: style.colorDark,
@@ -107,8 +115,10 @@ interface OrderRow {
   order_id: string;
   status: string;
   total: number;
+  delivery_charge: number;
   customer_name_initial: string;
   phone_masked: string;
+  payment_status: string | null;
   created_at: string;
 }
 
@@ -162,6 +172,7 @@ export default function Payment() {
   }, [methodRows]);
 
   const method = methodParam && methodParam in methodMap ? methodParam : null;
+  const selectedConfig = method ? methodMap[method] : null;
 
   // Form state for the method-specific page
   const [name, setName] = useState("");
@@ -175,8 +186,23 @@ export default function Payment() {
     setTrxId("");
   }, [methodParam]);
 
-  const amount = order?.total ?? 0;
+  const orderTotal = order?.total ?? 0;
+  const deliveryCharge = order?.delivery_charge ?? 0;
+  // Amount to charge for the chosen method depends on its payment_type:
+  // advance_delivery → just the delivery charge; full_payment → entire total.
+  const amount =
+    selectedConfig?.paymentType === "advance_delivery"
+      ? deliveryCharge
+      : orderTotal;
   const totalPretty = useMemo(() => `৳${amount.toLocaleString()}`, [amount]);
+  const orderTotalPretty = useMemo(
+    () => `৳${orderTotal.toLocaleString()}`,
+    [orderTotal],
+  );
+  const deliveryPretty = useMemo(
+    () => `৳${deliveryCharge.toLocaleString()}`,
+    [deliveryCharge],
+  );
 
   const submitPayment = useMutation({
     mutationFn: async (params: {
@@ -235,7 +261,7 @@ export default function Payment() {
   /* ----------------------------------------------------------- */
   if (!orderId) {
     return (
-      <Layout>
+      <Layout hideHeader>
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="font-display text-2xl font-bold">Missing order</h1>
           <p className="text-muted-foreground mt-2">
@@ -253,7 +279,7 @@ export default function Payment() {
 
   if (isLoading || methodsLoading) {
     return (
-      <Layout>
+      <Layout hideHeader>
         <div className="container mx-auto px-4 py-16 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-gold" />
         </div>
@@ -263,7 +289,7 @@ export default function Payment() {
 
   if (error || !order) {
     return (
-      <Layout>
+      <Layout hideHeader>
         <div className="container mx-auto px-4 py-16 max-w-md text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
             <AlertCircle className="h-7 w-7 text-destructive" />
@@ -341,7 +367,7 @@ export default function Payment() {
   if (submitted && method) {
     const cfg = methodMap[method];
     return (
-      <Layout>
+      <Layout hideHeader>
         <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
           <Header accent={cfg.color} accentDark={cfg.colorDark} fg={cfg.fg} />
 
@@ -449,7 +475,7 @@ export default function Payment() {
     };
 
     return (
-      <Layout>
+      <Layout hideHeader>
         <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
           <Header accent={cfg.color} accentDark={cfg.colorDark} fg={cfg.fg} />
 
@@ -506,6 +532,24 @@ export default function Payment() {
                   {cfg.type === "Send Money"
                     ? "Send Money to this number"
                     : "Pay to this merchant number"}
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {cfg.paymentType === "advance_delivery" ? (
+                    <>
+                      Send <strong>{totalPretty}</strong> as the delivery
+                      charge. The remaining{" "}
+                      <strong>
+                        ৳{(orderTotal - deliveryCharge).toLocaleString()}
+                      </strong>{" "}
+                      is collected in cash on delivery.
+                    </>
+                  ) : (
+                    <>
+                      Send the full order amount{" "}
+                      <strong>{totalPretty}</strong>. Nothing is owed on
+                      delivery.
+                    </>
+                  )}
                 </p>
                 <div className="flex items-center gap-3">
                   <p className="font-mono text-xl md:text-2xl font-bold text-foreground tracking-wide">
@@ -620,12 +664,70 @@ export default function Payment() {
   const methodList = Object.values(methodMap).sort(
     (a, b) => (BRAND_STYLES[a.key] ? 0 : 1) - (BRAND_STYLES[b.key] ? 0 : 1),
   );
+  const advanceMethods = methodList.filter(
+    (m) => m.paymentType === "advance_delivery",
+  );
+  const fullMethods = methodList.filter(
+    (m) => m.paymentType === "full_payment",
+  );
+  const remainingAfterDelivery = Math.max(0, orderTotal - deliveryCharge);
+
+  const renderMethodCard = (cfg: MethodConfig, displayAmount: number) => (
+    <motion.li
+      key={cfg.key}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Link
+        to={`/payment/${order.order_id}/${cfg.key}`}
+        className="group flex items-center gap-4 rounded-2xl bg-card ring-1 ring-border hover:ring-gold/40 hover:shadow-md transition-all p-3 md:p-4"
+      >
+        <span
+          className="inline-flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-xl bg-white shadow-sm ring-1 ring-black/5"
+          style={{ background: `${cfg.color}10` }}
+        >
+          {cfg.logo ? (
+            <img src={cfg.logo} alt={cfg.name} className="h-7 w-auto" />
+          ) : (
+            <CreditCard
+              className="h-7 w-7"
+              style={{ color: cfg.color }}
+            />
+          )}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-bold text-foreground">{cfg.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {cfg.type} ·{" "}
+            <span className="font-mono">{cfg.number}</span>
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p
+            className="font-display font-bold text-sm md:text-base"
+            style={{ color: cfg.colorDark }}
+          >
+            ৳{displayAmount.toLocaleString()}
+          </p>
+          <ChevronRight
+            className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 ml-auto"
+            aria-hidden
+          />
+        </div>
+      </Link>
+    </motion.li>
+  );
 
   return (
-    <Layout>
+    <Layout hideHeader>
       <div className="bg-gold-soft/15 min-h-[calc(100vh-4rem)]">
         {/* Brand header */}
-        <Header accent="#0F4D45" accentDark="#0B3A34" fg="#F8F6F2" />
+        <Header
+          accent="#0F4D45"
+          accentDark="#0B3A34"
+          fg="#F8F6F2"
+        />
 
         <div className="container mx-auto px-4 py-6 max-w-xl">
           <Link
@@ -645,7 +747,9 @@ export default function Payment() {
               <p className="font-display font-bold text-lg text-foreground">
                 Invoice No
               </p>
-              <p className="font-mono text-sm text-foreground">{order.order_id}</p>
+              <p className="font-mono text-sm text-foreground">
+                {order.order_id}
+              </p>
             </div>
             <div className="mt-1 flex items-baseline justify-between">
               <p className="text-sm text-muted-foreground">Customer</p>
@@ -657,19 +761,25 @@ export default function Payment() {
               </p>
             </div>
             <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
-              <p className="text-sm text-muted-foreground">Amount due</p>
+              <p className="text-sm text-muted-foreground">Order total</p>
               <p className="font-display text-2xl font-bold text-gold">
-                {totalPretty}
+                {orderTotalPretty}
               </p>
             </div>
+            {deliveryCharge > 0 && (
+              <div className="mt-1 flex items-baseline justify-between text-xs text-muted-foreground">
+                <span>includes delivery charge</span>
+                <span className="font-mono">{deliveryPretty}</span>
+              </div>
+            )}
           </div>
 
           <h2 className="font-display text-base font-semibold text-foreground mb-2">
             Choose how you&apos;d like to pay
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
-            All methods are verified manually. After paying, submit your Transaction
-            ID and we&apos;ll confirm shortly.
+            All methods are verified manually. After paying, submit your
+            Transaction ID and we&apos;ll confirm shortly.
           </p>
 
           {methodList.length === 0 ? (
@@ -678,54 +788,60 @@ export default function Payment() {
               on WhatsApp to complete your order.
             </div>
           ) : (
-            <ul className="space-y-3">
-              <AnimatePresence initial={false}>
-                {methodList.map((cfg) => (
-                  <motion.li
-                    key={cfg.key}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Link
-                      to={`/payment/${order.order_id}/${cfg.key}`}
-                      className="group flex items-center gap-4 rounded-2xl bg-card ring-1 ring-border hover:ring-gold/40 hover:shadow-md transition-all p-3 md:p-4"
-                    >
-                      <span
-                        className="inline-flex items-center justify-center h-12 w-12 md:h-14 md:w-14 rounded-xl bg-white shadow-sm ring-1 ring-black/5"
-                        style={{ background: `${cfg.color}10` }}
-                      >
-                        {cfg.logo ? (
-                          <img
-                            src={cfg.logo}
-                            alt={cfg.name}
-                            className="h-7 w-auto"
-                          />
-                        ) : (
-                          <CreditCard
-                            className="h-7 w-7"
-                            style={{ color: cfg.color }}
-                          />
-                        )}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-display font-bold text-foreground">
-                          {cfg.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {cfg.type} ·{" "}
-                          <span className="font-mono">{cfg.number}</span>
-                        </p>
-                      </div>
-                      <ChevronRight
-                        className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                        aria-hidden
-                      />
-                    </Link>
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
+            <div className="space-y-6">
+              {advanceMethods.length > 0 && (
+                <section>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-amber-700">
+                        Pay delivery charge only
+                      </p>
+                      <h3 className="font-display text-sm font-semibold text-foreground">
+                        Send {deliveryPretty} now ·{" "}
+                        <span className="text-muted-foreground font-normal">
+                          rest paid in cash on delivery
+                        </span>
+                      </h3>
+                    </div>
+                    <span className="hidden sm:block text-[11px] text-muted-foreground">
+                      ৳{remainingAfterDelivery.toLocaleString()} on delivery
+                    </span>
+                  </div>
+                  <ul className="space-y-3">
+                    <AnimatePresence initial={false}>
+                      {advanceMethods.map((cfg) =>
+                        renderMethodCard(cfg, deliveryCharge),
+                      )}
+                    </AnimatePresence>
+                  </ul>
+                </section>
+              )}
+
+              {fullMethods.length > 0 && (
+                <section>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-emerald-700">
+                        Pay full amount
+                      </p>
+                      <h3 className="font-display text-sm font-semibold text-foreground">
+                        Send {orderTotalPretty} ·{" "}
+                        <span className="text-muted-foreground font-normal">
+                          nothing owed on delivery
+                        </span>
+                      </h3>
+                    </div>
+                  </div>
+                  <ul className="space-y-3">
+                    <AnimatePresence initial={false}>
+                      {fullMethods.map((cfg) =>
+                        renderMethodCard(cfg, orderTotal),
+                      )}
+                    </AnimatePresence>
+                  </ul>
+                </section>
+              )}
+            </div>
           )}
 
           <p className="mt-5 flex items-center gap-1.5 text-[11px] text-muted-foreground justify-center">

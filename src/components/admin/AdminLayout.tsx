@@ -15,6 +15,7 @@ import {
   UserCheck,
   X,
   CreditCard,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { name: "Payment Methods", path: "/admin/payment-methods", icon: CreditCard, group: "Payments" },
   { name: "Coupons", path: "/admin/coupons", icon: Tag, group: "Marketing" },
   { name: "Notice Bar", path: "/admin/notice", icon: Bell, group: "Marketing" },
+  { name: "Storefront", path: "/admin/storefront", icon: Sparkles, group: "Marketing" },
 ];
 
 const groups: NavItem["group"][] = [
@@ -70,26 +72,26 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-secondary border-r border-sidebar-border shadow-[8px_0_24px_-12px_rgba(11,58,52,0.25)] transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 w-60 bg-secondary border-r border-sidebar-border shadow-[8px_0_24px_-12px_rgba(11,58,52,0.25)] transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="px-4 py-4 border-b border-sidebar-border flex items-center justify-between">
+          <div className="px-3 py-3 border-b border-sidebar-border flex items-center justify-between">
             <Link to="/admin" className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-gradient-gold-strong shadow ring-2 ring-gold/40">
+              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gradient-gold-strong shadow ring-2 ring-gold/40">
                 <img
                   src={LOGO_URL}
                   alt="Unity Collection"
-                  className="h-7 w-7 object-contain"
+                  className="h-6 w-6 object-contain"
                 />
               </span>
               <div className="min-w-0">
-                <p className="font-display text-sm font-bold text-sidebar-foreground leading-none">
+                <p className="font-display text-[13px] font-bold text-sidebar-foreground leading-none">
                   Unity Collection
                 </p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-gold leading-none mt-1">
+                <p className="text-[9px] uppercase tracking-[0.2em] text-gold leading-none mt-1">
                   Admin
                 </p>
               </div>
@@ -105,13 +107,13 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+          <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-thin">
             {groups.map((g) => {
               const items = navItems.filter((i) => i.group === g);
               if (items.length === 0) return null;
               return (
-                <div key={g} className="space-y-1">
-                  <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/50">
+                <div key={g} className="space-y-0.5">
+                  <p className="px-2.5 mb-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
                     {g}
                   </p>
                   {items.map((item) => {
@@ -125,20 +127,20 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                         to={item.path}
                         onClick={() => setSidebarOpen(false)}
                         className={cn(
-                          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                          "group relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors",
                           isActive
                             ? "bg-gradient-to-r from-gold/15 to-transparent text-gold"
-                            : "text-sidebar-foreground hover:bg-white/5 hover:text-gold",
+                            : "text-sidebar-foreground/85 hover:bg-white/5 hover:text-gold",
                         )}
                       >
                         {isActive && (
                           <span
                             aria-hidden
-                            className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-gold"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r-full bg-gold"
                           />
                         )}
-                        <item.icon className="h-4.5 w-4.5 shrink-0" />
-                        <span>{item.name}</span>
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{item.name}</span>
                       </Link>
                     );
                   })}
@@ -148,34 +150,34 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           </nav>
 
           {/* Admin profile */}
-          <div className="px-4 pt-3 pb-2 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-gradient-gold-strong text-gold-foreground font-semibold text-sm">
+          <div className="px-3 pt-2 pb-2 border-t border-sidebar-border">
+            <div className="flex items-center gap-2.5 mb-2">
+              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gradient-gold-strong text-gold-foreground font-semibold text-xs">
                 {adminInitial}
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground truncate">
+                <p className="text-[11px] font-medium text-sidebar-foreground truncate">
                   {adminEmail || "Administrator"}
                 </p>
-                <p className="text-[10px] text-sidebar-foreground/60">Admin</p>
+                <p className="text-[9px] text-sidebar-foreground/60">Admin</p>
               </div>
             </div>
             <InstallPrompt />
-            <Link to="/" className="block mt-2">
+            <Link to="/" className="block mt-1">
               <Button
                 variant="ghost"
-                className="w-full justify-start h-9 text-sidebar-foreground hover:text-gold hover:bg-white/5"
+                className="w-full justify-start h-8 px-2.5 text-[12px] text-sidebar-foreground hover:text-gold hover:bg-white/5"
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="h-3.5 w-3.5 mr-1.5" />
                 View store
               </Button>
             </Link>
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="w-full justify-start h-9 text-sidebar-foreground hover:text-destructive hover:bg-destructive/10"
+              className="w-full justify-start h-8 px-2.5 text-[12px] text-sidebar-foreground hover:text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-3.5 w-3.5 mr-1.5" />
               Logout
             </Button>
           </div>

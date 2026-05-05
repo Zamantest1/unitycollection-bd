@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, ShoppingBag, Truck, LayoutGrid } from "lucide-react";
+import { Home, Search, ShoppingBag, LayoutGrid } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 interface NavItem {
@@ -12,9 +12,10 @@ interface NavItem {
 
 /**
  * Mobile bottom navigation — visible on screens < md.
- * 4 tabs: Home / Shop / Categories / Cart / Track.
+ * 4 tabs: Home / Shop / Categories / Cart.
  * The WhatsApp bubble lives separately as a floating action button
- * (see FloatingWhatsApp) so it never crowds the nav.
+ * (see FloatingWhatsApp) so it never crowds the nav. Track lives
+ * inside Cart → Order tracking and the order confirmation flow.
  */
 export function BottomNav() {
   const location = useLocation();
@@ -46,12 +47,6 @@ export function BottomNav() {
       matches: (p) => p === "/cart",
       badge: itemCount,
     },
-    {
-      label: "Track",
-      icon: Truck,
-      to: "/track",
-      matches: (p) => p.startsWith("/track"),
-    },
   ];
 
   return (
@@ -59,7 +54,7 @@ export function BottomNav() {
       aria-label="Mobile primary"
       className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-gradient-primary text-primary-foreground border-t border-sidebar-border shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.4)] pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="grid grid-cols-5 h-16">
+      <ul className="grid grid-cols-4 h-16">
         {items.map((item) => {
           const Icon = item.icon;
           const active = item.matches?.(location.pathname) ?? false;
