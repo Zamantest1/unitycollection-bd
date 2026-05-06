@@ -35,6 +35,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildProductPath } from "@/lib/slug";
 
 const orderSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -635,7 +636,7 @@ const Cart = () => {
                       className="flex gap-3 md:gap-4 p-4 md:p-5 hover:bg-gold-soft/10 transition-colors"
                     >
                       <Link
-                        to={`/product/${item.productId}`}
+                        to={buildProductPath({ id: item.productId, name: item.name })}
                         className="shrink-0 w-20 h-24 md:w-24 md:h-28 rounded-lg overflow-hidden ring-1 ring-border bg-muted"
                       >
                         <img
@@ -646,7 +647,7 @@ const Cart = () => {
                       </Link>
                       <div className="flex-1 min-w-0">
                         <Link
-                          to={`/product/${item.productId}`}
+                          to={buildProductPath({ id: item.productId, name: item.name })}
                           className="block hover:text-primary"
                         >
                           <h3 className="font-display font-semibold text-sm md:text-base text-foreground line-clamp-2">

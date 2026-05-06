@@ -33,26 +33,61 @@ const AdminCategories = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [pendingDelete, setPendingDelete] = useState<CategoryRow | null>(null);
 
-  const { data: categories = [], isLoading } = useQuery<AdminCategory[]>({
+  // `display_order` was added in 20260508010000_add_categories_display_order.sql.
+  // If that migration hasn't been applied yet, ordering by it raises
+  // "column display_order does not exist" and the page goes blank.
+  // We try the ordered query first and gracefully fall back to a plain
+  // alphabetical fetch so the page is never broken just because the
+  // migration is pending.
+  const { data: queryResult, isLoading } = useQuery<{
+    rows: AdminCategory[];
+    reorderEnabled: boolean;
+  }>({
     queryKey: ["admin-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const ordered = await supabase
         .from("categories")
         .select("*")
-        // Manual order first; alphabetical fallback so untouched rows
-        // (display_order = 0) stay deterministic.
         .order("display_order", { ascending: true })
         .order("name", { ascending: true });
 
-      if (error) throw error;
-      return (data ?? []).map((c: { id: string; name: string; image_url: string | null; display_order?: number | null }) => ({
-        id: c.id,
-        name: c.name,
-        image_url: c.image_url ?? null,
-        display_order: c.display_order ?? 0,
-      }));
+      if (ordered.error) {
+        // Postgres "column does not exist" code is 42703.
+        // Anything that smells like a missing column → fall back.
+        const msg = ordered.error.message?.toLowerCase() ?? "";
+        const isMissingColumn =
+          ordered.error.code === "42703" || msg.includes("display_order");
+        if (!isMissingColumn) throw ordered.error;
+        const fallback = await supabase
+          .from("categories")
+          .select("*")
+          .order("name", { ascending: true });
+        if (fallback.error) throw fallback.error;
+        const rows = (fallback.data ?? []).map(
+          (c: { id: string; name: string; image_url: string | null }) => ({
+            id: c.id,
+            name: c.name,
+            image_url: c.image_url ?? null,
+            display_order: 0,
+          }),
+        );
+        return { rows, reorderEnabled: false };
+      }
+
+      const rows = (ordered.data ?? []).map(
+        (c: { id: string; name: string; image_url: string | null; display_order?: number | null }) => ({
+          id: c.id,
+          name: c.name,
+          image_url: c.image_url ?? null,
+          display_order: c.display_order ?? 0,
+        }),
+      );
+      return { rows, reorderEnabled: true };
     },
   });
+
+  const categories = queryResult?.rows ?? [];
+  const reorderEnabled = queryResult?.reorderEnabled ?? true;
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -216,13 +251,19 @@ const AdminCategories = () => {
         </div>
       ) : categories.length > 0 ? (
         <>
-          <p className="text-xs text-muted-foreground mb-3">
-            Use the arrow buttons to set the order categories appear in on the storefront.
-          </p>
+          {reorderEnabled ? (
+            <p className="text-xs text-muted-foreground mb-3">
+              Use the arrow buttons to set the order categories appear in on the storefront.
+            </p>
+          ) : (
+            <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Reordering is disabled because the <code className="font-mono">display_order</code> column hasn't been applied yet. Run the latest Supabase migrations and refresh this page to enable up/down arrows.
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {categories.map((category, index) => {
-              const canMoveUp = index > 0;
-              const canMoveDown = index < categories.length - 1;
+              const canMoveUp = reorderEnabled && index > 0;
+              const canMoveDown = reorderEnabled && index < categories.length - 1;
               return (
                 <Card key={category.id}>
                   <CardContent className="p-4">

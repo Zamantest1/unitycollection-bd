@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { buildCategoryShopPath } from "@/lib/slug";
 
 const Categories = () => {
   const { data: categories = [], isLoading } = useQuery({
@@ -50,7 +51,7 @@ const Categories = () => {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Link
-                    to={`/shop?category=${category.id}`}
+                    to={buildCategoryShopPath(category)}
                     className="block group relative overflow-hidden rounded-lg aspect-square"
                   >
                     {category.image_url ? (
