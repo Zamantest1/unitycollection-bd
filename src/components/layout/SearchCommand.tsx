@@ -11,6 +11,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Package, Tag, Search as SearchIcon } from "lucide-react";
+import { buildProductPath, buildCategoryShopPath } from "@/lib/slug";
 
 interface SearchCommandProps {
   open: boolean;
@@ -112,7 +113,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                 value={`${p.name} ${p.categories?.name ?? ""}`}
                 onSelect={() => {
                   close();
-                  navigate(`/product/${p.id}`);
+                  navigate(buildProductPath(p));
                 }}
               >
                 {p.image_urls?.[0] ? (
@@ -142,7 +143,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                 value={`category ${c.name}`}
                 onSelect={() => {
                   close();
-                  navigate(`/shop?category=${c.id}`);
+                  navigate(buildCategoryShopPath(c));
                 }}
               >
                 <Tag className="h-4 w-4" />

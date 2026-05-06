@@ -7,6 +7,7 @@ import { ShoppingCart, Check, Sparkles } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildProductPath } from "@/lib/slug";
 
 interface Product {
   id: string;
@@ -90,7 +91,7 @@ export function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: 0.2 }}
     >
       <Link
-        to={`/product/${product.id}`}
+        to={buildProductPath(product)}
         className="block group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl ring-1 ring-transparent hover:ring-gold/30 transition-all"
       >
         {/* Image */}

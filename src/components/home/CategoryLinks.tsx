@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { buildCategoryShopPath } from "@/lib/slug";
 
 interface CategoryWithCount {
   id: string;
@@ -67,7 +68,7 @@ export function CategoryLinks() {
           {categories.map((category) => (
             <Link
               key={category.id}
-              to={`/shop?category=${category.id}`}
+              to={buildCategoryShopPath(category)}
               className="snap-start shrink-0 w-40"
             >
               <CategoryTile category={category} />
@@ -84,7 +85,7 @@ export function CategoryLinks() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: index * 0.05, duration: 0.4 }}
             >
-              <Link to={`/shop?category=${category.id}`}>
+              <Link to={buildCategoryShopPath(category)}>
                 <CategoryTile category={category} />
               </Link>
             </motion.div>

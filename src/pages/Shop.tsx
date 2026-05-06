@@ -7,8 +7,19 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { ProductCardSkeleton } from "@/components/skeletons/ProductCardSkeleton";
 import { PullToRefresh } from "@/components/shop/PullToRefresh";
 import { ShopToolbar, SortMode } from "@/components/shop/ShopToolbar";
+import { ProductListItem } from "@/components/shop/ProductListItem";
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resolveCategoryParam, slugify } from "@/lib/slug";
+
+type ViewMode = "grid" | "list";
+const VIEW_MODE_KEY = "shop:viewMode";
+
+function readPersistedViewMode(): ViewMode {
+  if (typeof window === "undefined") return "grid";
+  const stored = window.localStorage.getItem(VIEW_MODE_KEY);
+  return stored === "list" ? "list" : "grid";
+}
 
 const PRICE_MAX_FALLBACK = 10000;
 
@@ -38,12 +49,6 @@ const Shop = () => {
   const sortFromUrl = (searchParams.get("sort") as SortMode) || "newest";
   const inStockFromUrl = searchParams.get("instock") === "1";
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
-  const [searchQuery, setSearchQuery] = useState(queryFromUrl);
-  const [sort, setSort] = useState<SortMode>(sortFromUrl);
-  const [inStockOnly, setInStockOnly] = useState(inStockFromUrl);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_MAX_FALLBACK]);
-
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: async () => {
@@ -57,6 +62,40 @@ const Shop = () => {
       return (data ?? []) as Product[];
     },
   });
+
+  // Used to resolve `?category=<slug>` URLs back to a UUID so the
+  // products filter still works.  Legacy `?category=<uuid>` URLs are
+  // recognised too — see resolveCategoryParam().
+  const { data: categoryList = [] } = useQuery<{ id: string; name: string | null }[]>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string | null }[];
+    },
+  });
+
+  const resolvedCategoryId = useMemo(
+    () => resolveCategoryParam(categoryFromUrl, categoryList),
+    [categoryFromUrl, categoryList],
+  );
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(resolvedCategoryId);
+  const [searchQuery, setSearchQuery] = useState(queryFromUrl);
+  const [sort, setSort] = useState<SortMode>(sortFromUrl);
+  const [inStockOnly, setInStockOnly] = useState(inStockFromUrl);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_MAX_FALLBACK]);
+  const [viewMode, setViewMode] = useState<ViewMode>(readPersistedViewMode);
+
+  const persistViewMode = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(VIEW_MODE_KEY, mode);
+    }
+  }, []);
 
   // Compute price max from data once products load
   const priceMax = useMemo(() => {
@@ -168,7 +207,15 @@ const Shop = () => {
 
   const handleCategoryChange = (id: string | null) => {
     setSelectedCategory(id);
-    updateUrl({ category: id });
+    if (!id) {
+      updateUrl({ category: null });
+      return;
+    }
+    // Write the slug (not the UUID) to the URL.  Falls back to UUID
+    // if the category name can't be slugified.
+    const found = categoryList.find((c) => c.id === id);
+    const slug = found?.name ? slugify(found.name) : "";
+    updateUrl({ category: slug || id });
   };
   const handleSearchChange = (q: string) => {
     setSearchQuery(q);
@@ -189,9 +236,9 @@ const Shop = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryFromUrl]);
   useEffect(() => {
-    if (categoryFromUrl !== selectedCategory) setSelectedCategory(categoryFromUrl);
+    if (resolvedCategoryId !== selectedCategory) setSelectedCategory(resolvedCategoryId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFromUrl]);
+  }, [resolvedCategoryId]);
 
   const clearAll = () => {
     setSelectedCategory(null);
@@ -243,20 +290,38 @@ const Shop = () => {
               onInStockToggle={handleInStockToggle}
               resultCount={filteredProducts.length}
               priceMax={priceMax}
+              viewMode={viewMode}
+              onViewModeChange={persistViewMode}
             />
 
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <ProductCardSkeleton key={i} />
-                ))}
-              </div>
+              viewMode === "grid" ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  {[...Array(8)].map((_, i) => (
+                    <ProductCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              )
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              viewMode === "grid" ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  {filteredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredProducts.map((product) => (
+                    <ProductListItem key={product.id} product={product} />
+                  ))}
+                </div>
+              )
             ) : (
               <div className="text-center py-20 max-w-md mx-auto">
                 <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gold-soft/40 flex items-center justify-center">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { extractIdFromParam } from "@/lib/slug";
 import { Layout } from "@/components/layout/Layout";
 import { OrderForm } from "@/components/product/OrderForm";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
@@ -43,7 +44,11 @@ interface ProductRow {
 }
 
 const ProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawParam } = useParams<{ id: string }>();
+  // URL is now `/product/<slug>--<uuid>` — but legacy `/product/<uuid>`
+  // links must keep working too.  extractIdFromParam grabs the UUID
+  // out of either format.
+  const id = extractIdFromParam(rawParam);
   const [currentImage, setCurrentImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [lightboxOpen, setLightboxOpen] = useState(false);

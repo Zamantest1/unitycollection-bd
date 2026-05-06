@@ -105,12 +105,16 @@ const AdminAbandoned = () => {
       if (error) throw error;
       return (data ?? []) as AbandonedRow[];
     },
-    // Manual-refresh-only: don't reload on tab focus / remount; the
+    // Manual-refresh-only: don't reload on tab focus / remount /
+    // reconnect, and don't auto-retry on error (the default 3 retries
+    // make a failing RPC look like an "auto refresh" loop).  The
     // Refresh button is the single source of truth for refetching.
     staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    retry: false,
   });
 
   const cancelMut = useMutation({

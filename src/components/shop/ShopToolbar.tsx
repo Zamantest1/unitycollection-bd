@@ -7,6 +7,8 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   Check,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +56,8 @@ interface ShopToolbarProps {
   onInStockToggle: (value: boolean) => void;
   resultCount: number;
   priceMax: number;
+  viewMode: "grid" | "list";
+  onViewModeChange: (mode: "grid" | "list") => void;
 }
 
 /**
@@ -74,6 +78,8 @@ export function ShopToolbar({
   onInStockToggle,
   resultCount,
   priceMax,
+  viewMode,
+  onViewModeChange,
 }: ShopToolbarProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -248,19 +254,56 @@ export function ShopToolbar({
             )}
           </div>
 
-          <Select value={sort} onValueChange={(v) => onSortChange(v as SortMode)}>
-            <SelectTrigger className="h-9 w-auto min-w-[150px] rounded-full border-gold/30 hover:border-gold gap-1.5 text-sm">
-              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {sortOptions.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <div
+              role="group"
+              aria-label="View mode"
+              className="inline-flex items-center rounded-full border border-gold/30 bg-card p-0.5"
+            >
+              <button
+                type="button"
+                onClick={() => onViewModeChange("grid")}
+                aria-pressed={viewMode === "grid"}
+                aria-label="Grid view"
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                  viewMode === "grid"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange("list")}
+                aria-pressed={viewMode === "list"}
+                aria-label="List view"
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                  viewMode === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+
+            <Select value={sort} onValueChange={(v) => onSortChange(v as SortMode)}>
+              <SelectTrigger className="h-9 w-auto min-w-[140px] rounded-full border-gold/30 hover:border-gold gap-1.5 text-sm">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {sortOptions.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
