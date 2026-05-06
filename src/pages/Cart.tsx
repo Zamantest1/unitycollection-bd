@@ -32,6 +32,7 @@ import {
   ChevronUp,
   ShieldCheck,
   Lock,
+  MessageCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
