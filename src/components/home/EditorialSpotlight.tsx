@@ -148,7 +148,7 @@ const SpotlightCta = ({
   colors,
 }: CtaProps) => {
   const className =
-    "w-full inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 md:px-5 py-2 md:py-2.5 text-[12px] md:text-sm font-semibold transition-colors";
+    "inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 md:px-5 py-2 md:py-2.5 text-[12px] md:text-sm font-semibold transition-colors whitespace-nowrap";
 
   const style = primary
     ? {
@@ -169,7 +169,7 @@ const SpotlightCta = ({
   );
 
   return isInternal ? (
-    <Link to={href} className="flex-1 md:flex-none">
+    <Link to={href} className="flex-none">
       {inner}
     </Link>
   ) : (
@@ -177,7 +177,7 @@ const SpotlightCta = ({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="flex-1 md:flex-none"
+      className="flex-none"
     >
       {inner}
     </a>

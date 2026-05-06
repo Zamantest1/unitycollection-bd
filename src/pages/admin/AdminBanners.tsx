@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Check, EyeOff } from "lucide-react";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
+import { BANNER_OVERLAYS, DEFAULT_OVERLAY_ID, getOverlay } from "@/lib/bannerOverlays";
+import { cn } from "@/lib/utils";
 
 interface BannerRow {
   id: string;
@@ -32,7 +34,7 @@ const AdminBanners = () => {
     link: "",
     is_active: true,
     display_order: 0,
-    overlay_type: "green" as "green" | "gold" | "none",
+    overlay_type: DEFAULT_OVERLAY_ID,
   });
 
   const { data: banners = [], isLoading } = useQuery({
@@ -85,13 +87,46 @@ const AdminBanners = () => {
     },
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from("banners")
+        .update({ is_active })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+    },
+  });
+
   const resetForm = () => {
-    setForm({ image_url: "", title: "", subtitle: "", link: "", is_active: true, display_order: 0, overlay_type: "green" });
+    setForm({
+      image_url: "",
+      title: "",
+      subtitle: "",
+      link: "",
+      is_active: true,
+      display_order: 0,
+      overlay_type: DEFAULT_OVERLAY_ID,
+    });
     setEditingId(null);
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (banner: any) => {
+  const handleEdit = (banner: {
+    id: string;
+    image_url: string;
+    title: string | null;
+    subtitle: string | null;
+    link: string | null;
+    is_active: boolean;
+    display_order: number;
+    overlay_type: string | null;
+  }) => {
     setForm({
       image_url: banner.image_url,
       title: banner.title || "",
@@ -99,7 +134,7 @@ const AdminBanners = () => {
       link: banner.link || "",
       is_active: banner.is_active,
       display_order: banner.display_order,
-      overlay_type: banner.overlay_type || "green",
+      overlay_type: banner.overlay_type || DEFAULT_OVERLAY_ID,
     });
     setEditingId(banner.id);
     setIsDialogOpen(true);
@@ -171,21 +206,65 @@ const AdminBanners = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Overlay Type</Label>
-                <Select 
-                  value={form.overlay_type} 
-                  onValueChange={(v: "green" | "gold" | "none") => setForm({ ...form, overlay_type: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select overlay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="green">Green (Default)</SelectItem>
-                    <SelectItem value="gold">Gold</SelectItem>
-                    <SelectItem value="none">None (Dark)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Overlay colour</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {BANNER_OVERLAYS.map((opt) => {
+                    const selected = form.overlay_type === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setForm({ ...form, overlay_type: opt.id })}
+                        className={cn(
+                          "group flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-xs transition-colors",
+                          selected
+                            ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                            : "border-border hover:border-primary/40",
+                        )}
+                      >
+                        <span
+                          className="h-6 w-6 shrink-0 rounded-full border border-black/10 shadow-inner"
+                          style={{ backgroundColor: opt.swatch }}
+                          aria-hidden
+                        />
+                        <span className="flex-1 truncate font-medium text-foreground">
+                          {opt.label}
+                        </span>
+                        {selected && <Check className="h-3.5 w-3.5 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {form.image_url && (
+                <div className="space-y-2">
+                  <Label>Live preview</Label>
+                  <div
+                    className="relative h-32 w-full overflow-hidden rounded-lg bg-cover bg-center ring-1 ring-border"
+                    style={{ backgroundImage: `url(${form.image_url})` }}
+                  >
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: getOverlay(form.overlay_type).gradient }}
+                    />
+                    <div className="relative flex h-full items-center px-4 text-white">
+                      <div className="max-w-[70%]">
+                        {form.title && (
+                          <p className="font-display text-base font-semibold leading-tight md:text-lg">
+                            {form.title}
+                          </p>
+                        )}
+                        {form.subtitle && (
+                          <p className="mt-1 text-[11px] opacity-90 line-clamp-2">
+                            {form.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.is_active}
@@ -213,43 +292,91 @@ const AdminBanners = () => {
         </div>
       ) : banners.length > 0 ? (
         <div className="space-y-4">
-          {banners.map((banner) => (
-            <Card key={banner.id}>
-              <CardContent className="p-4">
-                <div className="flex gap-4 items-center">
-                  <div className="w-32 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                    <img src={banner.image_url} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{banner.title || "No title"}</h3>
-                    <p className="text-sm text-muted">{banner.subtitle || "No subtitle"}</p>
-                    <p className="text-xs text-muted mt-1">Order: {banner.display_order}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(banner)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() =>
-                        setPendingDelete({
-                          id: banner.id,
-                          title: banner.title,
-                        })
-                      }
+          {banners.map((banner) => {
+            const overlay = getOverlay(banner.overlay_type);
+            return (
+              <Card key={banner.id} className={cn(!banner.is_active && "opacity-60")}> 
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                    <div
+                      className="relative h-20 w-full flex-shrink-0 overflow-hidden rounded-md bg-cover bg-center md:w-32"
+                      style={{ backgroundImage: `url(${banner.image_url})` }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: overlay.gradient }}
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {banner.title || "Untitled banner"}
+                        </h3>
+                        {banner.is_active ? (
+                          <Badge variant="outline" className="border-emerald-400 text-emerald-700 bg-emerald-50">
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
+                            <EyeOff className="h-3 w-3 mr-1" /> Hidden
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {banner.subtitle || "No subtitle"}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>Order: {banner.display_order}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className="h-3 w-3 rounded-full border border-black/10"
+                            style={{ backgroundColor: overlay.swatch }}
+                            aria-hidden
+                          />
+                          {overlay.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 md:justify-end">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={banner.is_active}
+                          onCheckedChange={(checked) =>
+                            toggleActiveMutation.mutate({ id: banner.id, is_active: checked })
+                          }
+                          disabled={toggleActiveMutation.isPending}
+                          aria-label="Toggle banner active"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(banner)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() =>
+                            setPendingDelete({
+                              id: banner.id,
+                              title: banner.title,
+                            })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-12 text-muted">
-          <p>No banners yet</p>
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="font-medium">No banners yet</p>
+          <p className="text-sm">Add your first banner to feature it on the homepage carousel.</p>
         </div>
       )}
 
