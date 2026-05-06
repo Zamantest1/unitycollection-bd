@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { BannerSkeleton } from "@/components/skeletons/BannerSkeleton";
+import { getOverlay } from "@/lib/bannerOverlays";
 
 export function HeroBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -126,14 +127,17 @@ export function HeroBanner() {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${currentBanner.image_url})` }}
           >
-            {/* Dynamic overlay based on overlay_type */}
-            <div className={`absolute inset-0 ${
-              (currentBanner as any).overlay_type === 'gold' 
-                ? 'bg-gradient-to-r from-gold/70 to-gold/30'
-                : (currentBanner as any).overlay_type === 'none'
-                ? 'bg-gradient-to-r from-black/50 to-black/20'
-                : 'bg-gradient-to-r from-secondary/80 to-secondary/40'
-            }`} />
+            {/* Dynamic overlay driven by `banners.overlay_type`.  Catalogue
+                + gradients live in src/lib/bannerOverlays.ts so the admin
+                swatch picker and the storefront stay in sync. */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: getOverlay(
+                  (currentBanner as { overlay_type?: string | null }).overlay_type,
+                ).gradient,
+              }}
+            />
           </div>
           
           <div className="relative h-full container mx-auto px-12 md:px-4 flex items-center justify-center md:justify-start">

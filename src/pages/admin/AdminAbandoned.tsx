@@ -89,7 +89,13 @@ const AdminAbandoned = () => {
   const [minAgeMinutes, setMinAgeMinutes] = useState(240);
   const [pendingCancel, setPendingCancel] = useState<AbandonedRow | null>(null);
 
-  const { data: rows = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: rows = [],
+    isLoading,
+    refetch,
+    isFetching,
+    error,
+  } = useQuery({
     queryKey: ["admin-abandoned", minAgeMinutes],
     queryFn: async () => {
       // RPC defined in 20260507000000_abandoned_order_recovery.sql.
@@ -99,6 +105,12 @@ const AdminAbandoned = () => {
       if (error) throw error;
       return (data ?? []) as AbandonedRow[];
     },
+    // Manual-refresh-only: don't reload on tab focus / remount; the
+    // Refresh button is the single source of truth for refetching.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const cancelMut = useMutation({
@@ -133,16 +145,16 @@ const AdminAbandoned = () => {
 
   return (
     <AdminLayout title="Abandoned Orders">
-      <div className="mb-4 p-4 rounded-lg border border-amber-300/40 bg-amber-50 dark:bg-amber-900/10 flex flex-col md:flex-row md:items-center gap-3">
-        <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+      <div className="mb-4 p-4 rounded-lg border border-amber-400 bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 flex flex-col md:flex-row md:items-center gap-3 shadow-sm">
+        <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
           <Clock className="h-5 w-5" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-semibold">
             {totalAbandoned} pending {totalAbandoned === 1 ? "order" : "orders"}
             {" — "}
             ৳{totalValueAtRisk.toLocaleString()} at risk
           </span>
         </div>
-        <p className="text-xs text-amber-800/80 dark:text-amber-200/80 md:ml-auto">
+        <p className="text-xs text-amber-900/80 dark:text-amber-200/90 md:ml-auto">
           Customer placed an order but never paid. Send a reminder, or cancel
           to free up stock.
         </p>
@@ -177,7 +189,27 @@ const AdminAbandoned = () => {
         </Button>
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center">
+          <XCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
+          <p className="font-medium text-destructive">
+            Could not load abandoned orders
+          </p>
+          <p className="text-sm text-muted-foreground mt-1 break-words">
+            {(error as Error).message}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? "animate-spin" : ""}`} />
+            Try again
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div
